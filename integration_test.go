@@ -293,3 +293,105 @@ func TestIntegrationConcurrentEngine(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+func TestIntegrationSpecExample(t *testing.T) {
+	eng, err := privyai.New(privyai.DefaultConfig())
+	if err != nil {
+		t.Fatalf("failed to initialize engine: %v", err)
+	}
+
+	// Exact requirement from spec:
+	// Input: "Send the report to alice@example.com.\nThe service uses API_KEY=sk_example_secret."
+	// Expected sanitized output: "Send the report to [EMAIL_REDACTED].\nThe service uses API_KEY=[SECRET_REDACTED]."
+	input := "Send the report to alice@example.com.\nThe service uses API_KEY=sk_example_secret."
+	expected := "Send the report to [EMAIL_REDACTED].\nThe service uses API_KEY=[SECRET_REDACTED]."
+
+	res, err := eng.Process(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if res.Sanitized != expected {
+		t.Fatalf("spec example output mismatch:\nexpected:\n%q\ngot:\n%q", expected, res.Sanitized)
+	}
+
+	if len(res.Findings) != 2 {
+		t.Fatalf("expected 2 findings, got %d", len(res.Findings))
+	}
+
+	// Finding 0: email
+	if res.Findings[0].Category != "email" || res.Findings[0].Tier != privyai.TierT1Personal {
+		t.Errorf("expected email finding at index 0, got: %+v", res.Findings[0])
+	}
+	// Finding 1: secret
+	if res.Findings[1].Category != "secret" || res.Findings[1].Tier != privyai.TierT3Restricted {
+		t.Errorf("expected secret finding at index 1, got: %+v", res.Findings[1])
+	}
+
+	// Idempotence check on the spec example output
+	res2, err := eng.Process(res.Sanitized)
+	if err != nil {
+		t.Fatalf("idempotence check failed: %v", err)
+	}
+	if len(res2.Findings) != 0 {
+		t.Errorf("expected 0 findings from placeholders, got %d: %+v", len(res2.Findings), res2.Findings)
+	}
+	if res2.Sanitized != expected {
+		t.Errorf("idempotence sanitized mismatch: expected %q, got %q", expected, res2.Sanitized)
+	}
+}
+
+func TestIntegrationSecretsEndToEnd(t *testing.T) {
+	eng, err := privyai.New(privyai.DefaultConfig())
+	if err != nil {
+		t.Fatalf("failed to initialize engine: %v", err)
+	}
+
+	input := "Deploy with AWS AKIAIOSFODNN7EXAMPLE and auth Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozG4m1e_fakeSignatureSegment123 now."
+	expected := "Deploy with AWS [AWS_ACCESS_KEY_REDACTED] and auth Bearer [JWT_REDACTED] now."
+
+	res, err := eng.Process(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if res.Sanitized != expected {
+		t.Errorf("expected sanitized:\n%q\ngot:\n%q", expected, res.Sanitized)
+	}
+
+	if len(res.Findings) != 2 {
+		t.Fatalf("expected 2 findings, got %d", len(res.Findings))
+	}
+
+	// Verify privacy: no raw tokens in stats or findings format
+	findingsStr := fmt.Sprintf("%+v", res.Findings)
+	if strings.Contains(findingsStr, "AKIAIOSFODNN7EXAMPLE") || strings.Contains(findingsStr, "eyJhbGciOiJIUzI1NiJ9") {
+		t.Fatalf("findings formatted output leaked raw token: %s", findingsStr)
+	}
+}
+
+func TestIntegrationPEMBlockEndToEnd(t *testing.T) {
+	eng, err := privyai.New(privyai.DefaultConfig())
+	if err != nil {
+		t.Fatalf("failed to initialize engine: %v", err)
+	}
+
+	input := "Cert data:\n-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA0fakeRSAPrivateKeyData1234567890abcdefghijklmnopqrstuvwxyz\n-----END RSA PRIVATE KEY-----\nEnd of cert."
+	expected := "Cert data:\n[PRIVATE_KEY_REDACTED]\nEnd of cert."
+
+	res, err := eng.Process(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if res.Sanitized != expected {
+		t.Errorf("expected sanitized:\n%q\ngot:\n%q", expected, res.Sanitized)
+	}
+
+	if len(res.Findings) != 1 {
+		t.Fatalf("expected 1 finding, got %d", len(res.Findings))
+	}
+	if res.Findings[0].Category != "private_key" || res.Findings[0].Tier != privyai.TierT4Critical {
+		t.Errorf("expected TierT4Critical private_key, got: %+v", res.Findings[0])
+	}
+}
