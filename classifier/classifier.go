@@ -38,12 +38,19 @@ func DefaultTierForCategory(category string) (detector.Tier, bool) {
 // Classifier is immutable and safe for concurrent use.
 type Classifier struct {
 	mapping     map[string]detector.Tier
+	custom      map[string]detector.Tier
 	defaultTier detector.Tier
 	overrides   map[string]detector.Tier
 }
 
 // New validates and constructs a classifier.
 func New(defaultTier detector.Tier, overrides map[string]detector.Tier) (*Classifier, error) {
+	return NewWithCustom(defaultTier, overrides, nil)
+}
+
+// NewWithCustom validates and constructs a classifier with configured custom
+// category tiers that take precedence over the unknown-category fallback.
+func NewWithCustom(defaultTier detector.Tier, overrides, custom map[string]detector.Tier) (*Classifier, error) {
 	if !defaultTier.IsValid() {
 		return nil, fmt.Errorf("invalid default tier %s", defaultTier)
 	}
@@ -63,13 +70,24 @@ func New(defaultTier detector.Tier, overrides map[string]detector.Tier) (*Classi
 		keys = append(keys, category)
 		checked[category] = tier
 	}
+	customChecked := make(map[string]detector.Tier, len(custom))
+	for category, tier := range custom {
+		if category == "" || !tier.IsValid() {
+			return nil, fmt.Errorf("invalid custom category tier for %q", category)
+		}
+		customChecked[category] = tier
+	}
 	sort.Strings(keys)
-	return &Classifier{mapping: mapping, defaultTier: defaultTier, overrides: checked}, nil
+	return &Classifier{mapping: mapping, custom: customChecked, defaultTier: defaultTier, overrides: checked}, nil
 }
 
 // Classify returns a copy of finding with its effective tier.
 func (c *Classifier) Classify(f detector.Finding) detector.Finding {
 	if tier, ok := c.overrides[f.Category]; ok {
+		f.Tier = tier
+		return f
+	}
+	if tier, ok := c.custom[f.Category]; ok {
 		f.Tier = tier
 		return f
 	}
