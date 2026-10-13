@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/YOURUSER/privyai/detector"
 	"github.com/YOURUSER/privyai/redactor"
 )
 
@@ -41,25 +42,17 @@ const (
 )
 
 // DatabaseRedactMode specifies whether to redact only the credential component or the full URI.
-type DatabaseRedactMode int
+type DatabaseRedactMode = detector.DatabaseRedactMode
 
 const (
 	// DatabaseRedactPasswordOnly redacts only the user/password portion of connection strings.
-	DatabaseRedactPasswordOnly DatabaseRedactMode = 0
+	DatabaseRedactPasswordOnly = detector.DatabaseRedactPasswordOnly
 	// DatabaseRedactFullURL redacts the entire database connection string.
-	DatabaseRedactFullURL DatabaseRedactMode = 1
+	DatabaseRedactFullURL = detector.DatabaseRedactFullURL
 )
 
 // CustomRule defines a user-specified regular expression detection rule.
-type CustomRule struct {
-	Name            string     `json:"name"`
-	Pattern         string     `json:"pattern"`
-	Category        string     `json:"category"`
-	Tier            Tier       `json:"tier"`
-	Confidence      Confidence `json:"confidence"`
-	Validator       string     `json:"validator,omitempty"`
-	RequiredContext []string   `json:"required_context,omitempty"`
-}
+type CustomRule = detector.CustomRule
 
 // Config specifies the configuration for the PrivyAI engine.
 type Config struct {
