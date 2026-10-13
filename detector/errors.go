@@ -11,6 +11,9 @@ var ErrDetectorPanic = errors.New("privyai: detector panic recovered")
 // ErrRegistry indicates an error during detector registration.
 var ErrRegistry = errors.New("privyai: registry error")
 
+// ErrInvalidRule is returned when a detection or policy rule is malformed.
+var ErrInvalidRule = errors.New("privyai: invalid rule specification")
+
 // DetectorPanicError provides details about a detector panic without exposing raw input.
 type DetectorPanicError struct {
 	DetectorName string

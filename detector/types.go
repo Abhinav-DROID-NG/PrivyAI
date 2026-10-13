@@ -45,6 +45,11 @@ func (t Tier) String() string {
 	}
 }
 
+// IsValid reports whether t is a valid Tier constant (T0-T4).
+func (t Tier) IsValid() bool {
+	return t >= TierT0Public && t <= TierT4Critical
+}
+
 // ParseTier parses a string into a Tier. It is case-insensitive.
 func ParseTier(s string) (Tier, error) {
 	switch strings.ToLower(strings.TrimSpace(s)) {

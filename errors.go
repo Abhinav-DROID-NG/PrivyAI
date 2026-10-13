@@ -16,7 +16,7 @@ var (
 	ErrInvalidUTF8 = errors.New("privyai: input contains invalid UTF-8 byte sequences")
 
 	// ErrInvalidRule is returned when a detection or policy rule is malformed.
-	ErrInvalidRule = errors.New("privyai: invalid rule specification")
+	ErrInvalidRule = detector.ErrInvalidRule
 
 	// ErrInvalidSpan is returned when a finding span has invalid offsets or violates rune boundaries.
 	ErrInvalidSpan = detector.ErrInvalidSpan
