@@ -1,6 +1,7 @@
 package privyai_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -8,6 +9,70 @@ import (
 
 	"github.com/YOURUSER/privyai"
 )
+
+func TestIntegrationStructuredJSON(t *testing.T) {
+	eng, err := privyai.New(privyai.DefaultConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	input := `{"name":"alice@example.com","password":"hunter2"}`
+	res, err := eng.ProcessWithOptions(input, privyai.ProcessOptions{
+		ContentType: privyai.ContentTypeJSON, ContextLabel: "external_transmission",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Blocked || !json.Valid([]byte(res.Sanitized)) {
+		t.Fatalf("result blocked=%t JSON=%q", res.Blocked, res.Sanitized)
+	}
+	if res.Sanitized != `{"name":"[EMAIL_REDACTED]","password":"[SECRET_REDACTED]"}` {
+		t.Fatalf("sanitized = %q", res.Sanitized)
+	}
+	if len(res.Findings) != 2 {
+		t.Fatalf("findings = %#v", res.Findings)
+	}
+}
+
+func TestIntegrationStructuredFallback(t *testing.T) {
+	eng, err := privyai.New(privyai.DefaultConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := eng.ProcessWithOptions(`{"broken":"alice@example.com"`, privyai.ProcessOptions{
+		ContentType: privyai.ContentTypeJSON, ContextLabel: "external_transmission",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !res.StructuredFallback || len(res.Findings) != 1 || res.Findings[0].Category != "email" {
+		t.Fatalf("fallback result = %#v", res)
+	}
+}
+
+func TestIntegrationStructuredLineFormats(t *testing.T) {
+	eng, err := privyai.New(privyai.DefaultConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, test := range []struct {
+		contentType privyai.ContentType
+		input       string
+		want        string
+	}{
+		{privyai.ContentTypeEnv, "PASSWORD=hunter2\n", "PASSWORD=[SECRET_REDACTED]\n"},
+		{privyai.ContentTypeYAMLLines, "token: value\n", "token: [SECRET_REDACTED]\n"},
+	} {
+		res, err := eng.ProcessWithOptions(test.input, privyai.ProcessOptions{
+			ContentType: test.contentType, ContextLabel: "external_transmission",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if res.Sanitized != test.want {
+			t.Fatalf("%s sanitized = %q", test.contentType, res.Sanitized)
+		}
+	}
+}
 
 func TestIntegrationEmailEndToEnd(t *testing.T) {
 	eng, err := privyai.New(privyai.DefaultConfig())
