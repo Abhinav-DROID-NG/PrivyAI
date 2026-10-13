@@ -36,19 +36,20 @@ func TestClassifierOverrideCanLowerTier(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	func TestClassifierCustomCategoryKeepsConfiguredTier(t *testing.T) {
-		c, err := NewWithCustom(detector.TierT4Critical, nil, map[string]detector.Tier{
-			"employee_id": detector.TierT1Personal,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		got := c.Classify(detector.Finding{Category: "employee_id", Tier: detector.TierT1Personal})
-		if got.Tier != detector.TierT1Personal {
-			t.Fatalf("got %s, want T1", got.Tier)
-		}
-	}
 	if got := c.Classify(detector.Finding{Category: "email", Tier: detector.TierT3Restricted}).Tier; got != detector.TierT0Public {
 		t.Fatalf("got %s, want T0", got)
+	}
+}
+
+func TestClassifierCustomCategoryKeepsConfiguredTier(t *testing.T) {
+	c, err := NewWithCustom(detector.TierT4Critical, nil, map[string]detector.Tier{
+		"employee_id": detector.TierT1Personal,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := c.Classify(detector.Finding{Category: "employee_id", Tier: detector.TierT1Personal})
+	if got.Tier != detector.TierT1Personal {
+		t.Fatalf("got %s, want T1", got.Tier)
 	}
 }

@@ -56,8 +56,8 @@ type CustomRule = detector.CustomRule
 
 // Config specifies the configuration for the PrivyAI engine.
 type Config struct {
-	EnabledDetectors        []string
-	PolicyJSON              []byte
+	EnabledDetectors []string
+	PolicyJSON       []byte
 	// PolicyPath is reserved for callers that load policy bytes themselves.
 	// The core never reads files; use PolicyJSON to configure an engine.
 	PolicyPath              string
