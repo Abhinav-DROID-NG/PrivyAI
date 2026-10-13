@@ -39,7 +39,7 @@ func Aggregate(candidates []detector.Finding, detectorPriorities map[string]int)
 	}
 
 	// Step 1: Merge exact duplicates (same Start, End, Category)
-	merged := mergeExactDuplicates(candidates)
+	merged := mergeExactDuplicates(candidates, detectorPriorities)
 	if len(merged) <= 1 {
 		return merged
 	}
@@ -84,7 +84,7 @@ type duplicateKey struct {
 	Category string
 }
 
-func mergeExactDuplicates(findings []detector.Finding) []detector.Finding {
+func mergeExactDuplicates(findings []detector.Finding, priorities map[string]int) []detector.Finding {
 	groups := make(map[duplicateKey][]detector.Finding)
 	var keys []duplicateKey
 
@@ -124,6 +124,12 @@ func mergeExactDuplicates(findings []detector.Finding) []detector.Finding {
 			// Combine validated flag
 			if item.Validated {
 				best.Validated = true
+			}
+			// Keep preferred source
+			prioItem := priorities[item.Source]
+			prioBest := priorities[best.Source]
+			if prioItem > prioBest || (prioItem == prioBest && item.Source < best.Source) {
+				best.Source = item.Source
 			}
 		}
 		merged = append(merged, best)
