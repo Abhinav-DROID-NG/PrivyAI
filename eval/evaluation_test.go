@@ -5,7 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 
 	privyai "github.com/Abhinav-DROID-NG/PrivyAI"
@@ -13,8 +15,20 @@ import (
 
 var reportPath = flag.String("eval-report", "", "write JSON evaluation report to this path")
 
-type sample struct {
-	name, input, category string
+type corpusSample struct {
+	name     string
+	input    string
+	expected []expectedFinding
+}
+
+type expectedFinding struct {
+	Category string `json:"category"`
+	Start    int    `json:"start"`
+	End      int    `json:"end"`
+}
+
+type sidecar struct {
+	Findings []expectedFinding `json:"findings"`
 }
 
 type metric struct {
@@ -29,41 +43,46 @@ func TestEvaluation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	samples := []sample{
-		{"email", "alice@example.com", "email"},
-		{"phone", "+1-800-555-0199", "phone"},
-		{"ip", "8.8.8.8", "ip"},
-		{"internal-ip", "192.168.1.1", "internal_ip"},
-		{"secret", "API_KEY=sk_example_secret", "secret"},
-		{"card", "4111-1111-1111-1111", "payment_card"},
-		{"ssn", "SSN 123-45-6789", "ssn"},
-		{"database", "postgres://user:pass@db.example.test/app", "database_credentials"},
-	}
+
 	metrics := make(map[string]*metric)
-	for _, sample := range samples {
+	for _, sample := range loadCorpus(t) {
 		result, err := engine.Process(sample.input)
 		if err != nil {
 			t.Fatal(err)
 		}
-		m := metrics[sample.category]
-		if m == nil {
-			m = &metric{}
-			metrics[sample.category] = m
-		}
-		found := false
-		for _, finding := range result.Findings {
-			if finding.Category == sample.category {
-				found = true
-				break
+
+		expected := make(map[string]expectedFinding, len(sample.expected))
+		for _, finding := range sample.expected {
+			expected[findingKey(finding.Category, finding.Start, finding.End)] = finding
+			if metrics[finding.Category] == nil {
+				metrics[finding.Category] = &metric{}
 			}
 		}
-		if found {
-			m.TP++
-		} else {
-			m.FN++
-			t.Errorf("%s: missing %s finding", sample.name, sample.category)
+
+		actual := make(map[string]struct{}, len(result.Findings))
+		for _, finding := range result.Findings {
+			key := findingKey(finding.Category, finding.Start, finding.End)
+			actual[key] = struct{}{}
+			m := metrics[finding.Category]
+			if m == nil {
+				m = &metric{}
+				metrics[finding.Category] = m
+			}
+			if _, ok := expected[key]; ok {
+				m.TP++
+			} else {
+				m.FP++
+				t.Errorf("%s: unexpected %s finding at [%d,%d)", sample.name, finding.Category, finding.Start, finding.End)
+			}
+		}
+		for key, finding := range expected {
+			if _, ok := actual[key]; !ok {
+				metrics[finding.Category].FN++
+				t.Errorf("%s: missing %s finding at [%d,%d)", sample.name, finding.Category, finding.Start, finding.End)
+			}
 		}
 	}
+
 	keys := make([]string, 0, len(metrics))
 	for key := range metrics {
 		keys = append(keys, key)
@@ -85,6 +104,46 @@ func TestEvaluation(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+}
+
+func loadCorpus(t *testing.T) []corpusSample {
+	t.Helper()
+	var samples []corpusSample
+	for _, directory := range []string{"positive", "negative"} {
+		files, err := filepath.Glob(filepath.Join("..", "testdata", directory, "*.txt"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		sort.Strings(files)
+		for _, inputPath := range files {
+			input, err := os.ReadFile(inputPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			sidecarPath := strings.TrimSuffix(inputPath, filepath.Ext(inputPath)) + ".json"
+			data, err := os.ReadFile(sidecarPath)
+			if err != nil {
+				t.Fatalf("%s: read sidecar: %v", inputPath, err)
+			}
+			var metadata sidecar
+			if err := json.Unmarshal(data, &metadata); err != nil {
+				t.Fatalf("%s: decode sidecar: %v", sidecarPath, err)
+			}
+			samples = append(samples, corpusSample{
+				name:     filepath.Join(directory, filepath.Base(inputPath)),
+				input:    string(input),
+				expected: metadata.Findings,
+			})
+		}
+	}
+	if len(samples) == 0 {
+		t.Fatal("evaluation corpus is empty")
+	}
+	return samples
+}
+
+func findingKey(category string, start, end int) string {
+	return fmt.Sprintf("%s:%d:%d", category, start, end)
 }
 
 func ratio(n, d float64) float64 {
