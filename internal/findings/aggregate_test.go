@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/YOURUSER/privyai/detector"
+	"github.com/Abhinav-DROID-NG/PrivyAI/detector"
 )
 
 func TestAggregateTableDriven(t *testing.T) {

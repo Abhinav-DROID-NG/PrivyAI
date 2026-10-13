@@ -8,7 +8,7 @@ import (
 	"sort"
 	"testing"
 
-	privyai "github.com/YOURUSER/privyai"
+	privyai "github.com/Abhinav-DROID-NG/PrivyAI"
 )
 
 var reportPath = flag.String("eval-report", "", "write JSON evaluation report to this path")

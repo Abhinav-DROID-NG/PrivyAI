@@ -1,8 +1,8 @@
 package privyai
 
 import (
-	"github.com/YOURUSER/privyai/detector"
-	"github.com/YOURUSER/privyai/policy"
+	"github.com/Abhinav-DROID-NG/PrivyAI/detector"
+	"github.com/Abhinav-DROID-NG/PrivyAI/policy"
 )
 
 // Tier represents the sensitivity classification of data (T0-T4).

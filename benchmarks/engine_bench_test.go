@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	privyai "github.com/YOURUSER/privyai"
+	privyai "github.com/Abhinav-DROID-NG/PrivyAI"
 )
 
 func BenchmarkEngine(b *testing.B) {

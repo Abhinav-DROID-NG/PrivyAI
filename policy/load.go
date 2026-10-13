@@ -8,7 +8,7 @@ import (
 	"io"
 	"path"
 
-	"github.com/YOURUSER/privyai/detector"
+	"github.com/Abhinav-DROID-NG/PrivyAI/detector"
 )
 
 // ErrInvalidRule identifies malformed policy rules.

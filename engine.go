@@ -5,12 +5,12 @@ import (
 	"sort"
 	"unicode/utf8"
 
-	"github.com/YOURUSER/privyai/classifier"
-	"github.com/YOURUSER/privyai/detector"
-	"github.com/YOURUSER/privyai/internal/findings"
-	"github.com/YOURUSER/privyai/policy"
-	"github.com/YOURUSER/privyai/redactor"
-	"github.com/YOURUSER/privyai/structured"
+	"github.com/Abhinav-DROID-NG/PrivyAI/classifier"
+	"github.com/Abhinav-DROID-NG/PrivyAI/detector"
+	"github.com/Abhinav-DROID-NG/PrivyAI/internal/findings"
+	"github.com/Abhinav-DROID-NG/PrivyAI/policy"
+	"github.com/Abhinav-DROID-NG/PrivyAI/redactor"
+	"github.com/Abhinav-DROID-NG/PrivyAI/structured"
 	"strings"
 )
 

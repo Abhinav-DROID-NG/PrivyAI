@@ -2,11 +2,10 @@ package policy
 
 import (
 	"errors"
-	"os"
 	"reflect"
 	"testing"
 
-	"github.com/YOURUSER/privyai/detector"
+	"github.com/Abhinav-DROID-NG/PrivyAI/detector"
 )
 
 func TestDefaultJSONEquivalent(t *testing.T) {
@@ -20,12 +19,8 @@ func TestDefaultJSONEquivalent(t *testing.T) {
 	}
 }
 
-func TestRepositoryDefaultJSONLoads(t *testing.T) {
-	data, err := os.ReadFile("../configs/default_rules.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	loaded, err := Load(data)
+func TestEmbeddedDefaultJSONLoads(t *testing.T) {
+	loaded, err := Load(DefaultJSON)
 	if err != nil {
 		t.Fatal(err)
 	}

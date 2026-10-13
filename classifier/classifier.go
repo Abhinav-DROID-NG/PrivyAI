@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/YOURUSER/privyai/detector"
+	"github.com/Abhinav-DROID-NG/PrivyAI/detector"
 )
 
 var defaultMapping = map[string]detector.Tier{

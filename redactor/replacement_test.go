@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/YOURUSER/privyai/detector"
+	"github.com/Abhinav-DROID-NG/PrivyAI/detector"
 )
 
 func TestFormatReplacementLabel(t *testing.T) {

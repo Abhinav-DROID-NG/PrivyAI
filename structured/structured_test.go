@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/YOURUSER/privyai/detector"
+	"github.com/Abhinav-DROID-NG/PrivyAI/detector"
 )
 
 func TestJSONSensitiveKeys(t *testing.T) {

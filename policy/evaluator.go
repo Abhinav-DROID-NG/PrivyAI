@@ -3,7 +3,7 @@ package policy
 import (
 	"fmt"
 
-	"github.com/YOURUSER/privyai/detector"
+	"github.com/Abhinav-DROID-NG/PrivyAI/detector"
 )
 
 // Evaluator evaluates a finding under a context label.

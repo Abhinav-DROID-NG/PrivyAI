@@ -3,7 +3,7 @@ package redactor
 import (
 	"strings"
 
-	"github.com/YOURUSER/privyai/detector"
+	"github.com/Abhinav-DROID-NG/PrivyAI/detector"
 )
 
 // Redactor applies privacy redactions to text based on findings and replacement configuration.

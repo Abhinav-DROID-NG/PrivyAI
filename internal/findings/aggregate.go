@@ -3,7 +3,7 @@ package findings
 import (
 	"sort"
 
-	"github.com/YOURUSER/privyai/detector"
+	"github.com/Abhinav-DROID-NG/PrivyAI/detector"
 )
 
 // Aggregate merges exact duplicates and resolves partial and nested overlaps

@@ -20,12 +20,14 @@ cover:
 	go tool cover -func=coverage.out
 
 bench:
-	go test -bench=. -benchmem ./...
+	go test -bench=. -benchmem ./benchmarks
 
 fuzz:
 	@echo "Running fuzz tests (time-boxed)..."
 	go test -run=^$$ -fuzz=FuzzProcess -fuzztime=10s .
 	go test -run=^$$ -fuzz=FuzzEmailDetector -fuzztime=10s ./detector
+	go test -run=^$$ -fuzz=FuzzScanJSON -fuzztime=10s ./structured
+	go test -run=^$$ -fuzz=FuzzScanLines -fuzztime=10s ./structured
 
 eval:
 	go test -v -run=TestEvaluation ./eval

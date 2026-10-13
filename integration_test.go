@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/YOURUSER/privyai"
+	"github.com/Abhinav-DROID-NG/PrivyAI"
 )
 
 func TestIntegrationStructuredJSON(t *testing.T) {

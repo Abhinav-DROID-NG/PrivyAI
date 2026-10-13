@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/YOURUSER/privyai/detector"
+	"github.com/Abhinav-DROID-NG/PrivyAI/detector"
 )
 
 func TestValidateSpansSuccess(t *testing.T) {

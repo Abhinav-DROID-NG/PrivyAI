@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/YOURUSER/privyai/detector"
+	"github.com/Abhinav-DROID-NG/PrivyAI/detector"
 )
 
 // Format identifies the supported structured input form.

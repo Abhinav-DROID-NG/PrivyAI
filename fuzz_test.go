@@ -5,7 +5,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/YOURUSER/privyai"
+	"github.com/Abhinav-DROID-NG/PrivyAI"
 )
 
 func FuzzProcess(f *testing.F) {

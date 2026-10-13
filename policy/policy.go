@@ -8,7 +8,7 @@ import (
 	"path"
 	"sort"
 
-	"github.com/YOURUSER/privyai/detector"
+	"github.com/Abhinav-DROID-NG/PrivyAI/detector"
 )
 
 func parseTier(data json.RawMessage) (*detector.Tier, error) {

@@ -4,11 +4,11 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/YOURUSER/privyai"
-	"github.com/YOURUSER/privyai/detector"
-	"github.com/YOURUSER/privyai/internal/findings"
-	"github.com/YOURUSER/privyai/policy"
-	"github.com/YOURUSER/privyai/redactor"
+	"github.com/Abhinav-DROID-NG/PrivyAI"
+	"github.com/Abhinav-DROID-NG/PrivyAI/detector"
+	"github.com/Abhinav-DROID-NG/PrivyAI/internal/findings"
+	"github.com/Abhinav-DROID-NG/PrivyAI/policy"
+	"github.com/Abhinav-DROID-NG/PrivyAI/redactor"
 )
 
 func FuzzProcessStructured(f *testing.F) {

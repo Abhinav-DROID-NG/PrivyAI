@@ -3,7 +3,7 @@ package classifier
 import (
 	"testing"
 
-	"github.com/YOURUSER/privyai/detector"
+	"github.com/Abhinav-DROID-NG/PrivyAI/detector"
 )
 
 func TestClassifierMappingAndFallback(t *testing.T) {

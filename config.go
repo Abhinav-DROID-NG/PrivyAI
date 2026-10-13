@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/YOURUSER/privyai/detector"
-	"github.com/YOURUSER/privyai/redactor"
+	"github.com/Abhinav-DROID-NG/PrivyAI/detector"
+	"github.com/Abhinav-DROID-NG/PrivyAI/redactor"
 )
 
 // DefaultMaxInputBytes is 10 MiB.

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/YOURUSER/privyai/detector"
+	"github.com/Abhinav-DROID-NG/PrivyAI/detector"
 )
 
 // Sentinel errors for PrivyAI.
