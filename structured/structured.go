@@ -60,6 +60,25 @@ type jsonScanner struct {
 	findings []detector.Finding
 }
 
+func (s *jsonScanner) skipSpace() {
+	for s.pos < len(s.text) {
+		switch s.text[s.pos] {
+		case ' ', '\t', '\r', '\n':
+			s.pos++
+		default:
+			return
+		}
+	}
+}
+
+func (s *jsonScanner) consume(want byte) bool {
+	if s.pos < len(s.text) && s.text[s.pos] == want {
+		s.pos++
+		return true
+	}
+	return false
+}
+
 func scanJSON(text string, maxDepth int) ([]detector.Finding, error) {
 	if maxDepth <= 0 {
 		maxDepth = DefaultMaxDepth
@@ -180,7 +199,8 @@ func (s *jsonScanner) string() (int, int, string, error) {
 			end := s.pos + 1
 			raw := s.text[start:end]
 			decoded, err := strconv.Unquote(raw)
-			return start + 1, s.pos, decoded, err
+			s.pos = end
+			return start + 1, end - 1, decoded, err
 		default:
 			s.pos++
 		}
@@ -253,5 +273,14 @@ func scanLines(input string, separator byte) []detector.Finding {
 func sensitiveCategory(key string) (string, bool) {
 	key = strings.ToLower(strings.TrimSpace(key))
 	key = strings.NewReplacer("-", "_", " ", "_").Replace(key)
-	return sensitiveKeys[key]
+	if category, ok := sensitiveKeys[key]; ok {
+		return category, true
+	}
+	compact := strings.ReplaceAll(key, "_", "")
+	for known, category := range sensitiveKeys {
+		if strings.ReplaceAll(known, "_", "") == compact {
+			return category, true
+		}
+	}
+	return "", false
 }
