@@ -70,6 +70,13 @@ func TestJSONDepthLimit(t *testing.T) {
 	}
 }
 
+func TestJSONRejectsGoOnlyEscapes(t *testing.T) {
+	_, fallback, err := Scan(`{"pAsswd":"\x8b"}`, JSON, 100)
+	if err != nil || !fallback {
+		t.Fatalf("fallback=%t err=%v", fallback, err)
+	}
+}
+
 func TestLineFormats(t *testing.T) {
 	tests := []struct {
 		name, input string
