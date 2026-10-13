@@ -27,7 +27,11 @@ func New(cfg Config) (*Engine, error) {
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
-	classifierEngine, err := classifier.New(cfg.DefaultTier, cfg.TierOverrides)
+	customTiers := make(map[string]Tier, len(cfg.CustomRules))
+	for _, rule := range cfg.CustomRules {
+		customTiers[rule.Category] = rule.Tier
+	}
+	classifierEngine, err := classifier.NewWithCustom(cfg.DefaultTier, cfg.TierOverrides, customTiers)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrInvalidConfig, err)
 	}
