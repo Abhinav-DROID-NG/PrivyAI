@@ -48,11 +48,11 @@ var (
 	dbURLRegex = regexp.MustCompile(`(?i)\b((?:postgres|postgresql|mysql|mongodb|mongodb\+srv|redis|rediss|amqp|amqps)://(?:([^:@\s/]+):([^@\s/]+)@|([^@\s/]+)@)?([^\s"'<>;]+))\b`)
 
 	// ADO / OLEDB / Key-Value connection strings containing credentials:
-	// Looks for patterns containing Server/Data Source AND Password/Pwd
-	dbKeyValueRegex = regexp.MustCompile(`(?i)(?:Server|Data\s+Source|Database|Initial\s+Catalog|Host)\s*=[^;\r\n]+;[^;\r\n]*?(?:Password|Pwd)\s*=\s*([^;\r\n"'\s]+)[^;\r\n]*;?`)
+	// Looks for patterns containing Server/Data Source AND Password/Pwd on the same line
+	dbKeyValueRegex = regexp.MustCompile(`(?i)\b(?:Server|Data\s+Source|Database|Initial\s+Catalog|Host)\s*=[^;\r\n]+;[^\r\n]*?(?:Password|Pwd)\s*=\s*([^;\r\n"'\s]+)`)
 
-	// Alternative order: Password/Pwd first, followed by Server/Data Source/Database
-	dbKeyValueReverseRegex = regexp.MustCompile(`(?i)(?:Password|Pwd)\s*=\s*([^;\r\n"'\s]+);[^;\r\n]*?(?:Server|Data\s+Source|Database|Initial\s+Catalog|Host)\s*=[^;\r\n]+;?`)
+	// Alternative order: Password/Pwd first, followed by Server/Data Source/Database on the same line
+	dbKeyValueReverseRegex = regexp.MustCompile(`(?i)\b(?:Password|Pwd)\s*=\s*([^;\r\n"'\s]+);[^\r\n]*?(?:Server|Data\s+Source|Database|Initial\s+Catalog|Host)\s*=[^;\r\n]+`)
 
 	// JDBC URL with credentials in query: jdbc:postgresql://host:port/db?user=...&password=...
 	jdbcRegex = regexp.MustCompile(`(?i)\b(jdbc:(?:postgresql|mysql|oracle|sqlserver|mariadb)://[^\s"'<>;]+?(?:password|pwd)=([^\s&"'<>;]+)[^\s"'<>;]*)\b`)
