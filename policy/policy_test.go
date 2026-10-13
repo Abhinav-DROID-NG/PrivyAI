@@ -2,6 +2,7 @@ package policy
 
 import (
 	"errors"
+	"os"
 	"reflect"
 	"testing"
 
@@ -12,6 +13,20 @@ func TestDefaultJSONEquivalent(t *testing.T) {
 	loaded, err := LoadDefault()
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	func TestRepositoryDefaultJSONLoads(t *testing.T) {
+		data, err := os.ReadFile("../configs/default_rules.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		loaded, err := Load(data)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(loaded, Default()) {
+			t.Fatal("repository default policy differs from built-in policy")
+		}
 	}
 	if !reflect.DeepEqual(loaded, Default()) {
 		t.Fatalf("embedded policy differs from built-in policy")
