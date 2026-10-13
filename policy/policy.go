@@ -27,6 +27,11 @@ func parseTier(data json.RawMessage) (*detector.Tier, error) {
 }
 
 // Rule is an ordered policy rule. Nil tier bounds are unbounded.
+//
+// Category matching is exact unless the value contains path.Match glob
+// metacharacters. Rules are selected by explicit priority first, then exact
+// category, glob category, tier range, and default specificity. Equal matches
+// use the more protective action and then the lower rule index.
 type Rule struct {
 	ID               string          `json:"id,omitempty"`
 	Name             string          `json:"name,omitempty"`
@@ -79,7 +84,8 @@ type Policy struct {
 	Rules []Rule `json:"rules"`
 }
 
-// Evaluation is the result of evaluating one finding.
+// Evaluation is the result of evaluating one finding. RESTRICT only reports
+// conditions; the caller is responsible for enforcing them.
 type Evaluation struct {
 	Action           detector.Action
 	ReplacementLabel string
@@ -91,7 +97,8 @@ type Report struct {
 	Warnings []string
 }
 
-// Default returns the built-in fail-safe policy.
+// Default returns the built-in fail-safe policy. T1 is redacted only for the
+// external_transmission context, T2 and T3 are redacted, and T4 is blocked.
 func Default() Policy {
 	t1 := detector.TierT1Personal
 	t2 := detector.TierT2Confidential
