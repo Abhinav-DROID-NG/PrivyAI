@@ -136,7 +136,17 @@ func (d *SecretsDetector) Detect(text string) []Finding {
 			val = trimmedVal
 		}
 
-		if isPlaceholder(val) {
+		// If value starts with '[', check if it's a full bracketed placeholder (e.g. [SECRET_REDACTED])
+		if valStart < len(text) && text[valStart] == '[' {
+			if closeIdx := strings.IndexByte(text[valStart:], ']'); closeIdx != -1 {
+				bracketed := text[valStart : valStart+closeIdx+1]
+				if isPlaceholder(bracketed) {
+					continue
+				}
+			}
+		}
+
+		if isPlaceholder(val) || isPlaceholder(strings.Trim(val, `"'`)) {
 			continue
 		}
 
@@ -167,7 +177,19 @@ func (d *SecretsDetector) Detect(text string) []Finding {
 }
 
 func isPlaceholder(s string) bool {
-	return strings.HasPrefix(s, "[") && strings.HasSuffix(s, "_REDACTED]")
+	if strings.HasPrefix(s, "[") && strings.HasSuffix(s, "_REDACTED]") {
+		return true
+	}
+	if s == "[REDACTED]" {
+		return true
+	}
+	if strings.HasPrefix(s, "[HMAC_") && strings.HasSuffix(s, "]") {
+		return true
+	}
+	if len(s) > 0 && strings.Trim(s, "*") == "" {
+		return true
+	}
+	return false
 }
 
 // Regex for hexadecimal strings and UUIDs to exclude from raw entropy
