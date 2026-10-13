@@ -5,6 +5,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/YOURUSER/privyai/detector"
+	"github.com/YOURUSER/privyai/redactor"
 )
 
 // Engine is the core privacy inspection and redaction engine.
@@ -12,6 +13,7 @@ import (
 type Engine struct {
 	config   Config
 	registry *detector.Registry
+	redactor *redactor.Redactor
 }
 
 // New creates and initializes a new PrivyAI Engine instance.
@@ -22,14 +24,34 @@ func New(cfg Config) (*Engine, error) {
 
 	reg := detector.NewRegistry()
 
-	// In Phase 1, custom rules are compiled if provided.
-	// Built-in detectors will be registered in subsequent phases.
+	// Register enabled built-in detectors
+	if isDetectorEnabled("email", cfg.EnabledDetectors) {
+		if err := reg.Register(detector.NewEmailDetector()); err != nil {
+			return nil, err
+		}
+	}
+
+	red := redactor.NewRedactor(cfg.Replacement, cfg.FailClosedBehavior)
+
 	e := &Engine{
 		config:   cfg,
 		registry: reg,
+		redactor: red,
 	}
 
 	return e, nil
+}
+
+func isDetectorEnabled(name string, enabled []string) bool {
+	if enabled == nil {
+		return true // nil indicates all built-in detectors enabled
+	}
+	for _, d := range enabled {
+		if d == name {
+			return true
+		}
+	}
+	return false
 }
 
 // Process inspects and sanitizes plain text using default options.
@@ -60,17 +82,36 @@ func (e *Engine) ProcessWithOptions(input string, opts ProcessOptions) (Result, 
 		return Result{}, err
 	}
 
-	// In Phase 1 skeleton, findings are unmodified candidates.
-	// In later phases: aggregation -> classification -> policy -> redaction will be wired here.
-	stats := e.computeStats(rawFindings)
+	// 4. Default policy assignment for Phase 2:
+	// Sensitive findings (e.g. Email / T1+) default to ActionRedact unless policy overrides
+	findings := make([]Finding, len(rawFindings))
 	decision := ActionAllow
-	for _, f := range rawFindings {
+
+	for i, f := range rawFindings {
+		// In Phase 2: default sensitive findings to ActionRedact
+		if f.Tier >= TierT1Personal {
+			f.Action = ActionRedact
+		} else {
+			f.Action = ActionAllow
+		}
 		decision = MaxAction(decision, f.Action)
+		findings[i] = f
 	}
 
+	// 5. Redaction enforcement
+	sanitized, err := e.redactor.Redact(input, findings)
+	if err != nil {
+		if e.config.FailClosedOnError {
+			return e.failClosedResult(err)
+		}
+		return Result{}, err
+	}
+
+	stats := e.computeStats(findings)
+
 	return Result{
-		Sanitized:  input,
-		Findings:   rawFindings,
+		Sanitized:  sanitized,
+		Findings:   findings,
 		Decision:   decision,
 		Blocked:    decision == ActionBlock,
 		Restricted: decision == ActionRestrict,

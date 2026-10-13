@@ -19,7 +19,7 @@ var (
 	ErrInvalidRule = errors.New("privyai: invalid rule specification")
 
 	// ErrInvalidSpan is returned when a finding span has invalid offsets or violates rune boundaries.
-	ErrInvalidSpan = errors.New("privyai: invalid finding span or rune boundary")
+	ErrInvalidSpan = detector.ErrInvalidSpan
 
 	// ErrPolicyConflict is returned when unresolvable contradictory policy rules exist.
 	ErrPolicyConflict = errors.New("privyai: unresolvable policy conflict")
@@ -38,22 +38,7 @@ var (
 type DetectorPanicError = detector.DetectorPanicError
 
 // SpanError provides details about a span boundary or indexing error without exposing sensitive values.
-type SpanError struct {
-	Start  int
-	End    int
-	Length int
-	Reason string
-}
-
-// Error implements error.
-func (e *SpanError) Error() string {
-	return fmt.Sprintf("privyai: span [%d, %d) invalid for text length %d: %s", e.Start, e.End, e.Length, e.Reason)
-}
-
-// Unwrap returns ErrInvalidSpan.
-func (e *SpanError) Unwrap() error {
-	return ErrInvalidSpan
-}
+type SpanError = detector.SpanError
 
 // RuleError provides details about a rule specification error without exposing sensitive pattern data.
 type RuleError struct {

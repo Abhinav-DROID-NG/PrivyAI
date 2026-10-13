@@ -3,66 +3,41 @@ package privyai
 import (
 	"fmt"
 	"regexp"
+
+	"github.com/YOURUSER/privyai/redactor"
 )
 
 // DefaultMaxInputBytes is 10 MiB.
 const DefaultMaxInputBytes = 10 * 1024 * 1024
 
 // ReplacementStrategy defines how redacted values are substituted.
-type ReplacementStrategy int
+type ReplacementStrategy = redactor.ReplacementStrategy
 
 const (
 	// ReplacementStrategyLabel replaces findings with category tokens like [EMAIL_REDACTED].
-	ReplacementStrategyLabel ReplacementStrategy = 0
+	ReplacementStrategyLabel = redactor.ReplacementStrategyLabel
 	// ReplacementStrategyFixedMask replaces findings with a fixed mask like ****.
-	ReplacementStrategyFixedMask ReplacementStrategy = 1
+	ReplacementStrategyFixedMask = redactor.ReplacementStrategyFixedMask
 	// ReplacementStrategyPartialMask replaces findings keeping partial characters (e.g. ***1234).
-	ReplacementStrategyPartialMask ReplacementStrategy = 2
+	ReplacementStrategyPartialMask = redactor.ReplacementStrategyPartialMask
 	// ReplacementStrategyHMAC replaces findings with a deterministic HMAC-SHA256 hex/token.
-	ReplacementStrategyHMAC ReplacementStrategy = 3
+	ReplacementStrategyHMAC = redactor.ReplacementStrategyHMAC
 )
 
-// String returns the name of the replacement strategy.
-func (s ReplacementStrategy) String() string {
-	switch s {
-	case ReplacementStrategyLabel:
-		return "LABEL"
-	case ReplacementStrategyFixedMask:
-		return "FIXED_MASK"
-	case ReplacementStrategyPartialMask:
-		return "PARTIAL_MASK"
-	case ReplacementStrategyHMAC:
-		return "HMAC"
-	default:
-		return fmt.Sprintf("ReplacementStrategy(%d)", int(s))
-	}
-}
-
 // PartialMaskConfig specifies rules for partial masking.
-type PartialMaskConfig struct {
-	KeepChars int  `json:"keep_chars"` // Number of characters to retain
-	KeepEnd   bool `json:"keep_end"`   // If true, keeps trailing chars; if false, keeps leading chars
-	MaskChar  rune `json:"mask_char"`  // Character used for masking (default '*')
-}
+type PartialMaskConfig = redactor.PartialMaskConfig
 
 // ReplacementConfig configures redaction substitution behaviors.
-type ReplacementConfig struct {
-	DefaultStrategy    ReplacementStrategy            `json:"default_strategy"`
-	CategoryStrategies map[string]ReplacementStrategy `json:"category_strategies,omitempty"`
-	FixedMaskText      string                         `json:"fixed_mask_text,omitempty"`
-	HMACKey            []byte                         `json:"-"` // sensitive key, excluded from JSON serialization
-	HMACLength         int                            `json:"hmac_length,omitempty"`
-	PartialMasks       map[string]PartialMaskConfig   `json:"partial_masks,omitempty"`
-}
+type ReplacementConfig = redactor.ReplacementConfig
 
 // FailClosedBehavior defines redaction output behavior if an unrecoverable error or span corruption occurs.
-type FailClosedBehavior int
+type FailClosedBehavior = redactor.FailClosedBehavior
 
 const (
 	// FailClosedNoOutput returns empty string for Sanitized on error.
-	FailClosedNoOutput FailClosedBehavior = 0
+	FailClosedNoOutput = redactor.FailClosedNoOutput
 	// FailClosedRedactAll returns a global redaction marker replacing the entire text on error.
-	FailClosedRedactAll FailClosedBehavior = 1
+	FailClosedRedactAll = redactor.FailClosedRedactAll
 )
 
 // DatabaseRedactMode specifies whether to redact only the credential component or the full URI.
