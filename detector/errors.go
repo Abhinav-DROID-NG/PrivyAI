@@ -47,4 +47,3 @@ func (e *SpanError) Error() string {
 func (e *SpanError) Unwrap() error {
 	return ErrInvalidSpan
 }
-

@@ -54,12 +54,12 @@ type PartialMaskConfig struct {
 
 // ReplacementConfig configures redaction substitution behaviors.
 type ReplacementConfig struct {
-	DefaultStrategy    ReplacementStrategy           `json:"default_strategy"`
+	DefaultStrategy    ReplacementStrategy            `json:"default_strategy"`
 	CategoryStrategies map[string]ReplacementStrategy `json:"category_strategies,omitempty"`
-	FixedMaskText      string                        `json:"fixed_mask_text,omitempty"`
-	HMACKey            []byte                        `json:"-"` // sensitive key, excluded from JSON serialization
-	HMACLength         int                           `json:"hmac_length,omitempty"`
-	PartialMasks       map[string]PartialMaskConfig  `json:"partial_masks,omitempty"`
+	FixedMaskText      string                         `json:"fixed_mask_text,omitempty"`
+	HMACKey            []byte                         `json:"-"` // sensitive key, excluded from JSON serialization
+	HMACLength         int                            `json:"hmac_length,omitempty"`
+	PartialMasks       map[string]PartialMaskConfig   `json:"partial_masks,omitempty"`
 }
 
 // FailClosedBehavior defines redaction output behavior if an unrecoverable error or span corruption occurs.

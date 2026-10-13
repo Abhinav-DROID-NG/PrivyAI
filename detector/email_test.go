@@ -117,3 +117,21 @@ func TestEmailDetectorEdgeCases(t *testing.T) {
 		t.Errorf("second email mismatch: %s", multiple[multipleFindings[1].Start:multipleFindings[1].End])
 	}
 }
+
+func FuzzEmailDetector(f *testing.F) {
+	f.Add("Send email to alice@example.com please")
+	f.Add("user.name+tag@sub.domain.co.uk")
+	f.Add("[EMAIL_REDACTED]")
+	f.Add("plain text without email")
+	f.Add("<admin@domain.org>")
+
+	d := NewEmailDetector()
+	f.Fuzz(func(t *testing.T, text string) {
+		findings := d.Detect(text)
+		for _, finding := range findings {
+			if finding.Start < 0 || finding.Start >= finding.End || finding.End > len(text) {
+				t.Fatalf("invalid span [%d, %d) for text length %d", finding.Start, finding.End, len(text))
+			}
+		}
+	})
+}

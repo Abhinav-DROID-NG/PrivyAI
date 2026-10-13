@@ -24,7 +24,8 @@ bench:
 
 fuzz:
 	@echo "Running fuzz tests (time-boxed)..."
-	go test -run=^$$ -fuzz=Fuzz -fuzztime=30s ./... 2>/dev/null || echo "Fuzz tests not yet implemented or completed"
+	go test -run=^$$ -fuzz=FuzzProcess -fuzztime=10s .
+	go test -run=^$$ -fuzz=FuzzEmailDetector -fuzztime=10s ./detector
 
 eval:
 	@echo "Running evaluation harness..."
