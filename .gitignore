@@ -1,0 +1,29 @@
+# Binaries for programs and tests
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Test artifacts
+coverage.out
+coverage.html
+profile.out
+
+# Go workspace
+go.work
+go.work.sum
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Scratch & temporary
+scratch/
+tmp/
