@@ -73,6 +73,7 @@ type Config struct {
 	FailClosedOnError       bool
 	FailClosedBehavior      FailClosedBehavior
 	AllowInvalidUTF8        bool
+	StructuredMaxDepth      int
 }
 
 // DefaultConfig returns a secure default configuration.
@@ -93,6 +94,7 @@ func DefaultConfig() Config {
 		FailClosedOnError:       true,
 		FailClosedBehavior:      FailClosedNoOutput,
 		AllowInvalidUTF8:        false,
+		StructuredMaxDepth:      100,
 	}
 }
 
@@ -100,6 +102,9 @@ func DefaultConfig() Config {
 func (c Config) Validate() error {
 	if c.MaxInputBytes < 0 {
 		return fmt.Errorf("%w: MaxInputBytes cannot be negative", ErrInvalidConfig)
+	}
+	if c.StructuredMaxDepth < 0 {
+		return fmt.Errorf("%w: StructuredMaxDepth cannot be negative", ErrInvalidConfig)
 	}
 
 	if c.DefaultTier < TierT0Public || c.DefaultTier > TierT4Critical {

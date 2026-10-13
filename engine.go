@@ -10,6 +10,8 @@ import (
 	"github.com/YOURUSER/privyai/internal/findings"
 	"github.com/YOURUSER/privyai/policy"
 	"github.com/YOURUSER/privyai/redactor"
+	"github.com/YOURUSER/privyai/structured"
+	"strings"
 )
 
 // Engine is the core privacy inspection and redaction engine.
@@ -144,6 +146,11 @@ func (e *Engine) ProcessWithOptions(input string, opts ProcessOptions) (Result, 
 		}
 		return Result{}, err
 	}
+	structuredFindings, structuredFallback, structuredErr := e.scanStructured(input, opts.ContentType)
+	if structuredErr != nil {
+		return e.failClosedResult(structuredErr)
+	}
+	rawFindings = append(rawFindings, structuredFindings...)
 
 	// 4. Aggregation: deduplicate and resolve overlaps deterministically
 	aggregated := findings.Aggregate(rawFindings, e.registry.Priorities())
@@ -167,7 +174,8 @@ func (e *Engine) ProcessWithOptions(input string, opts ProcessOptions) (Result, 
 	if decision == ActionBlock {
 		return Result{
 			Findings: processedFindings, Decision: decision, Blocked: true,
-			Conditions: conditions, Stats: e.computeStats(processedFindings),
+			Conditions: conditions, StructuredFallback: structuredFallback,
+			Stats: e.computeStats(processedFindings),
 		}, nil
 	}
 	sanitized, err := e.redactor.Redact(input, processedFindings)
@@ -185,8 +193,31 @@ func (e *Engine) ProcessWithOptions(input string, opts ProcessOptions) (Result, 
 		Findings:   processedFindings,
 		Decision:   decision,
 		Restricted: decision == ActionRestrict,
-		Conditions: conditions, Stats: stats,
+		Conditions: conditions, StructuredFallback: structuredFallback, Stats: stats,
 	}, nil
+}
+
+func (e *Engine) scanStructured(input string, contentType ContentType) ([]Finding, bool, error) {
+	format := structured.Format("")
+	switch contentType {
+	case ContentTypeJSON:
+		format = structured.JSON
+	case ContentTypeEnv:
+		format = structured.Env
+	case ContentTypeYAMLLines:
+		format = structured.YAMLLines
+	case ContentTypeAuto:
+		trimmed := strings.TrimSpace(input)
+		if strings.HasPrefix(trimmed, "{") || strings.HasPrefix(trimmed, "[") {
+			format = structured.JSON
+		}
+	default:
+		return nil, false, nil
+	}
+	if format == "" {
+		return nil, false, nil
+	}
+	return structured.Scan(input, format, e.config.StructuredMaxDepth)
 }
 
 func uniqueStrings(values []string) []string {

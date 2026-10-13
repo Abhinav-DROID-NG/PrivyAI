@@ -94,7 +94,9 @@ type Result struct {
 	Blocked    bool      `json:"blocked"`
 	Restricted bool      `json:"restricted"`
 	Conditions []string  `json:"conditions,omitempty"`
-	Stats      Stats     `json:"stats"`
+	// StructuredFallback reports invalid structured input was scanned as text.
+	StructuredFallback bool  `json:"structured_fallback,omitempty"`
+	Stats              Stats `json:"stats"`
 }
 
 // ContentType identifies the format or hint of the input text.
@@ -107,6 +109,10 @@ const (
 	ContentTypeJSON ContentType = "application/json"
 	// ContentTypeEnv indicates KEY=VALUE environment file content.
 	ContentTypeEnv ContentType = "text/x-env"
+	// ContentTypeYAMLLines indicates the supported key: value line subset.
+	ContentTypeYAMLLines ContentType = "text/x-yaml-lines"
+	// ContentTypeAuto selects JSON for JSON-looking input and plain text otherwise.
+	ContentTypeAuto ContentType = "auto"
 )
 
 // ProcessOptions provides context and options for processing.
