@@ -28,8 +28,7 @@ fuzz:
 	go test -run=^$$ -fuzz=FuzzEmailDetector -fuzztime=10s ./detector
 
 eval:
-	@echo "Running evaluation harness..."
-	go test -v -run=TestEvaluation ./...
+	go test -v -run=TestEvaluation ./eval
 
 clean:
 	rm -f coverage.out coverage.html profile.out
