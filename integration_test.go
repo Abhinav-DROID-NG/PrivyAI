@@ -377,15 +377,13 @@ func TestIntegrationPEMBlockEndToEnd(t *testing.T) {
 	}
 
 	input := "Cert data:\n-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA0fakeRSAPrivateKeyData1234567890abcdefghijklmnopqrstuvwxyz\n-----END RSA PRIVATE KEY-----\nEnd of cert."
-	expected := "Cert data:\n[PRIVATE_KEY_REDACTED]\nEnd of cert."
-
 	res, err := eng.Process(input)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if res.Sanitized != expected {
-		t.Errorf("expected sanitized:\n%q\ngot:\n%q", expected, res.Sanitized)
+	if !res.Blocked || res.Sanitized != "" {
+		t.Errorf("expected blocked result with no sanitized output, got blocked=%t sanitized=%q", res.Blocked, res.Sanitized)
 	}
 
 	if len(res.Findings) != 1 {
@@ -461,15 +459,13 @@ func TestIntegrationDatabasePasswordOnlyEndToEnd(t *testing.T) {
 	}
 
 	input := "Connect string: postgres://app_user:secret_postgres_pass@db.internal:5432/mydb active."
-	expected := "Connect string: postgres://app_user:[DATABASE_CREDENTIALS_REDACTED]@db.internal:5432/mydb active."
-
 	res, err := eng.Process(input)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if res.Sanitized != expected {
-		t.Errorf("expected sanitized:\n%q\ngot:\n%q", expected, res.Sanitized)
+	if !res.Blocked || res.Sanitized != "" {
+		t.Errorf("expected blocked result with no sanitized output, got blocked=%t sanitized=%q", res.Blocked, res.Sanitized)
 	}
 
 	if len(res.Findings) != 1 {
@@ -490,15 +486,13 @@ func TestIntegrationDatabaseFullURLEndToEnd(t *testing.T) {
 	}
 
 	input := "Connect string: postgres://app_user:secret_postgres_pass@db.internal:5432/mydb active."
-	expected := "Connect string: [DATABASE_CREDENTIALS_REDACTED] active."
-
 	res, err := eng.Process(input)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if res.Sanitized != expected {
-		t.Errorf("expected sanitized:\n%q\ngot:\n%q", expected, res.Sanitized)
+	if !res.Blocked || res.Sanitized != "" {
+		t.Errorf("expected blocked result with no sanitized output, got blocked=%t sanitized=%q", res.Blocked, res.Sanitized)
 	}
 }
 
@@ -538,4 +532,3 @@ func TestIntegrationCustomRulesEndToEnd(t *testing.T) {
 		t.Errorf("expected employee_id T2, got: %+v", res.Findings[0])
 	}
 }
-

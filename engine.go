@@ -2,25 +2,41 @@ package privyai
 
 import (
 	"fmt"
+	"sort"
 	"unicode/utf8"
 
+	"github.com/YOURUSER/privyai/classifier"
 	"github.com/YOURUSER/privyai/detector"
 	"github.com/YOURUSER/privyai/internal/findings"
+	"github.com/YOURUSER/privyai/policy"
 	"github.com/YOURUSER/privyai/redactor"
 )
 
 // Engine is the core privacy inspection and redaction engine.
 // After initialization with New(), Engine is immutable and safe for concurrent use.
 type Engine struct {
-	config   Config
-	registry *detector.Registry
-	redactor *redactor.Redactor
+	config     Config
+	registry   *detector.Registry
+	redactor   *redactor.Redactor
+	classifier *classifier.Classifier
+	policy     policy.Policy
 }
 
 // New creates and initializes a new PrivyAI Engine instance.
 func New(cfg Config) (*Engine, error) {
 	if err := cfg.Validate(); err != nil {
 		return nil, err
+	}
+	classifierEngine, err := classifier.New(cfg.DefaultTier, cfg.TierOverrides)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidConfig, err)
+	}
+	activePolicy := policy.Default()
+	if len(cfg.PolicyJSON) > 0 {
+		activePolicy, err = policy.Load(cfg.PolicyJSON)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %v", ErrInvalidConfig, err)
+		}
 	}
 
 	reg := detector.NewRegistry()
@@ -74,9 +90,11 @@ func New(cfg Config) (*Engine, error) {
 	red := redactor.NewRedactor(cfg.Replacement, cfg.FailClosedBehavior)
 
 	e := &Engine{
-		config:   cfg,
-		registry: reg,
-		redactor: red,
+		config:     cfg,
+		registry:   reg,
+		redactor:   red,
+		classifier: classifierEngine,
+		policy:     activePolicy,
 	}
 
 	return e, nil
@@ -97,7 +115,8 @@ func isDetectorEnabled(name string, enabled []string) bool {
 // Process inspects and sanitizes plain text using default options.
 func (e *Engine) Process(input string) (Result, error) {
 	return e.ProcessWithOptions(input, ProcessOptions{
-		ContentType: ContentTypePlainText,
+		ContentType:  ContentTypePlainText,
+		ContextLabel: "external_transmission",
 	})
 }
 
@@ -125,22 +144,28 @@ func (e *Engine) ProcessWithOptions(input string, opts ProcessOptions) (Result, 
 	// 4. Aggregation: deduplicate and resolve overlaps deterministically
 	aggregated := findings.Aggregate(rawFindings, e.registry.Priorities())
 
-	// 5. Default policy assignment:
-	// Sensitive findings (e.g. T1+) default to ActionRedact unless policy overrides
-	processedFindings := make([]Finding, len(aggregated))
+	// 5. Classify and evaluate policy.
+	processedFindings := e.classifier.ClassifyAll(aggregated)
 	decision := ActionAllow
-
-	for i, f := range aggregated {
-		if f.Tier >= TierT1Personal {
-			f.Action = ActionRedact
-		} else {
-			f.Action = ActionAllow
+	var conditions []string
+	for i := range processedFindings {
+		evaluation, evalErr := e.policy.Evaluate(processedFindings[i], opts.ContextLabel)
+		if evalErr != nil {
+			return e.failClosedResult(evalErr)
 		}
-		decision = MaxAction(decision, f.Action)
-		processedFindings[i] = f
+		processedFindings[i].Action = evaluation.Action
+		decision = MaxAction(decision, evaluation.Action)
+		conditions = append(conditions, evaluation.Conditions...)
 	}
+	conditions = uniqueStrings(conditions)
 
-	// 6. Redaction enforcement
+	// 6. Redaction enforcement. BLOCK never returns sanitized content.
+	if decision == ActionBlock {
+		return Result{
+			Findings: processedFindings, Decision: decision, Blocked: true,
+			Conditions: conditions, Stats: e.computeStats(processedFindings),
+		}, nil
+	}
 	sanitized, err := e.redactor.Redact(input, processedFindings)
 	if err != nil {
 		if e.config.FailClosedOnError {
@@ -155,10 +180,24 @@ func (e *Engine) ProcessWithOptions(input string, opts ProcessOptions) (Result, 
 		Sanitized:  sanitized,
 		Findings:   processedFindings,
 		Decision:   decision,
-		Blocked:    decision == ActionBlock,
 		Restricted: decision == ActionRestrict,
-		Stats:      stats,
+		Conditions: conditions, Stats: stats,
 	}, nil
+}
+
+func uniqueStrings(values []string) []string {
+	set := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		if value != "" {
+			set[value] = struct{}{}
+		}
+	}
+	out := make([]string, 0, len(set))
+	for value := range set {
+		out = append(out, value)
+	}
+	sort.Strings(out)
+	return out
 }
 
 func (e *Engine) computeStats(findings []Finding) Stats {

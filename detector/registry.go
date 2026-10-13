@@ -96,7 +96,7 @@ func RunSafe(d Detector, text string) (findings []Finding, err error) {
 		if rec := recover(); rec != nil {
 			err = &DetectorPanicError{
 				DetectorName: d.Name(),
-				Reason:       fmt.Sprintf("%v", rec),
+				Reason:       "panic recovered",
 			}
 			findings = nil
 		}

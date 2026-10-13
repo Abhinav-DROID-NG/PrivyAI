@@ -10,25 +10,25 @@ import (
 // deterministically according to PrivyAI resolution precedence rules.
 //
 // Resolution order:
-// 1. Exact duplicates (same Start, End, and Category):
-//    Merged into a single finding keeping the highest Confidence,
-//    logical OR of Validated flags, and the highest Tier.
-// 2. Overlapping findings (partial or nested/contained):
-//    Selected greedily according to strict total ordering:
-//    a. Higher Tier wins (e.g. T4 database credentials beats T1 email).
-//    b. If Tiers are equal, longer span wins (e.g. outer match beats inner match).
-//    c. If span lengths are equal, higher detector priority wins.
-//    d. If detector priorities are equal, lexicographically smaller Category wins.
-//    e. Finally, lexicographically smaller Source name wins.
+//  1. Exact duplicates (same Start, End, and Category):
+//     Merged into a single finding keeping the highest Confidence,
+//     logical OR of Validated flags, and the highest Tier.
+//  2. Overlapping findings (partial or nested/contained):
+//     Selected greedily according to strict total ordering:
+//     a. Higher Tier wins (e.g. T4 database credentials beats T1 email).
+//     b. If Tiers are equal, longer span wins (e.g. outer match beats inner match).
+//     c. If span lengths are equal, higher detector priority wins.
+//     d. If detector priorities are equal, lexicographically smaller Category wins.
+//     e. Finally, lexicographically smaller Source name wins.
 //
 // Contained spans (nested matches):
 // A contained span is an overlap where one span [s1, e1) is entirely within [s2, e2).
 // Contained spans are resolved by the exact same rule: higher Tier wins.
-// - If the outer span has higher Tier (e.g. database credentials T4 enclosing an email T1),
-//   the outer span is retained and the inner span is suppressed.
-// - If the inner span has higher Tier (e.g. payment card T3 inside a generic phone T1 candidate),
-//   the inner span is retained and the outer span is suppressed.
-// - If both have equal Tier, the longer span wins by rule 2b.
+//   - If the outer span has higher Tier (e.g. database credentials T4 enclosing an email T1),
+//     the outer span is retained and the inner span is suppressed.
+//   - If the inner span has higher Tier (e.g. payment card T3 inside a generic phone T1 candidate),
+//     the inner span is retained and the outer span is suppressed.
+//   - If both have equal Tier, the longer span wins by rule 2b.
 //
 // Output:
 // The resulting slice is guaranteed to be non-overlapping and sorted by Start ascending,

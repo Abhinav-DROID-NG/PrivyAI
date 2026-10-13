@@ -2,6 +2,7 @@ package privyai
 
 import (
 	"github.com/YOURUSER/privyai/detector"
+	"github.com/YOURUSER/privyai/policy"
 )
 
 // Tier represents the sensitivity classification of data (T0-T4).
@@ -68,6 +69,15 @@ type Finding = detector.Finding
 
 // Detector defines the interface for sensitive data detectors.
 type Detector = detector.Detector
+
+// Policy and Rule are aliases for the configurable policy API.
+type Policy = policy.Policy
+type Rule = policy.Rule
+type PolicyReport = policy.Report
+type PolicyEvaluation = policy.Evaluation
+
+// LoadPolicy parses a strict JSON policy document.
+var LoadPolicy = policy.Load
 
 // Stats summarizes findings by count, category, and tier without any raw data.
 type Stats struct {

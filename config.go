@@ -103,6 +103,17 @@ func (c Config) Validate() error {
 	if c.DefaultTier < TierT0Public || c.DefaultTier > TierT4Critical {
 		return fmt.Errorf("%w: DefaultTier %v is out of range", ErrInvalidConfig, c.DefaultTier)
 	}
+	if c.PolicyPath != "" {
+		return fmt.Errorf("%w: PolicyPath is unsupported; use PolicyJSON", ErrInvalidConfig)
+	}
+	for category, tier := range c.TierOverrides {
+		if category == "" {
+			return fmt.Errorf("%w: TierOverrides contains an empty category", ErrInvalidConfig)
+		}
+		if !tier.IsValid() {
+			return fmt.Errorf("%w: TierOverrides[%q] is invalid", ErrInvalidConfig, category)
+		}
+	}
 
 	// Validate HMAC replacement settings if used
 	if c.Replacement.DefaultStrategy == ReplacementStrategyHMAC {
