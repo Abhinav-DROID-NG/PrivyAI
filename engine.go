@@ -46,6 +46,30 @@ func New(cfg Config) (*Engine, error) {
 			return nil, err
 		}
 	}
+	if isDetectorEnabled("financial", cfg.EnabledDetectors) {
+		if err := reg.Register(detector.NewFinancialDetector()); err != nil {
+			return nil, err
+		}
+	}
+	if isDetectorEnabled("identifiers", cfg.EnabledDetectors) {
+		if err := reg.Register(detector.NewIdentifiersDetector(cfg.IdentifierJurisdictions)); err != nil {
+			return nil, err
+		}
+	}
+	if isDetectorEnabled("database", cfg.EnabledDetectors) {
+		if err := reg.Register(detector.NewDatabaseDetector(cfg.DatabaseRedactMode)); err != nil {
+			return nil, err
+		}
+	}
+	if len(cfg.CustomRules) > 0 {
+		customDet, err := detector.NewCustomDetector(cfg.CustomRules)
+		if err != nil {
+			return nil, err
+		}
+		if err := reg.Register(customDet); err != nil {
+			return nil, err
+		}
+	}
 
 	red := redactor.NewRedactor(cfg.Replacement, cfg.FailClosedBehavior)
 
