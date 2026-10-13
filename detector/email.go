@@ -51,10 +51,10 @@ func (d *EmailDetector) Detect(text string) []Finding {
 		actualStart := start + trimStart
 		actualEnd := start + trimEnd
 
-		// Reject if immediately preceded by characters that would form an invalid email prefix
+		// Reject if immediately preceded by characters that would form an invalid email prefix or URI credentials
 		if actualStart > 0 {
 			prev := text[actualStart-1]
-			if prev == '.' || prev == '@' || prev == '%' || prev == '+' || prev == '_' || prev == '-' {
+			if prev == '.' || prev == '@' || prev == '%' || prev == '+' || prev == '_' || prev == '-' || prev == ':' || prev == '/' {
 				continue
 			}
 		}
