@@ -19,7 +19,7 @@ type Engine struct {
 	registry   *detector.Registry
 	redactor   *redactor.Redactor
 	classifier *classifier.Classifier
-	policy     policy.Policy
+	policy     policy.Evaluator
 }
 
 // New creates and initializes a new PrivyAI Engine instance.
@@ -153,7 +153,7 @@ func (e *Engine) ProcessWithOptions(input string, opts ProcessOptions) (Result, 
 	decision := ActionAllow
 	var conditions []string
 	for i := range processedFindings {
-		evaluation, evalErr := e.policy.Evaluate(processedFindings[i], opts.ContextLabel)
+		evaluation, evalErr := policy.EvaluateFailClosed(e.policy, processedFindings[i], opts.ContextLabel)
 		if evalErr != nil {
 			return e.failClosedResult(evalErr)
 		}
