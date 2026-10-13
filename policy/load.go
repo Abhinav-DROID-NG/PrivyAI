@@ -40,7 +40,7 @@ func Load(data []byte) (Policy, error) {
 }
 
 func validate(p Policy) error {
-	if p.Rules == nil || len(p.Rules) == 0 {
+	if len(p.Rules) == 0 {
 		return fmt.Errorf("%w: rules must not be empty", ErrInvalidRule)
 	}
 	for i, r := range p.Rules {

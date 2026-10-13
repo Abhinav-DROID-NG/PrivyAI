@@ -116,16 +116,6 @@ func Default() Policy {
 
 func ptr(t detector.Tier) *detector.Tier { return &t }
 
-func (r Rule) label() string {
-	if r.ID != "" {
-		return r.ID
-	}
-	if r.Name != "" {
-		return r.Name
-	}
-	return "unnamed"
-}
-
 func (r Rule) matches(f detector.Finding, context string) bool {
 	if r.Category != "" {
 		exact := r.Category == f.Category
