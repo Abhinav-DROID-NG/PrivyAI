@@ -77,6 +77,18 @@ func (r *Registry) Detectors() []Detector {
 	return result
 }
 
+// Priorities returns a map of detector names to their configured priority values.
+func (r *Registry) Priorities() map[string]int {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	priorities := make(map[string]int, len(r.detectors))
+	for name, d := range r.detectors {
+		priorities[name] = d.Priority()
+	}
+	return priorities
+}
+
 // RunSafe runs a single detector wrapped in panic recovery.
 // Any panic is caught and transformed into a DetectorPanicError, ensuring fail-closed safety.
 func RunSafe(d Detector, text string) (findings []Finding, err error) {
