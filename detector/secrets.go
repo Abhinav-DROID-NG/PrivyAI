@@ -5,7 +5,6 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
-	"unicode/utf8"
 )
 
 // SecretsDetector detects credentials, tokens, API keys, PEM blocks, and contextual secrets.
@@ -49,8 +48,8 @@ var (
 	// Stripe live/restricted keys.
 	stripeRegex = regexp.MustCompile(`\b(sk_live|rk_live)_[A-Za-z0-9]{24,}\b`)
 
-	// Google API keys.
-	googleRegex = regexp.MustCompile(`\bAIza[0-9A-Za-z_-]{35}\b`)
+	// Google API keys (AIza followed by 34-35 base64url characters).
+	googleRegex = regexp.MustCompile(`\bAIza[0-9A-Za-z_-]{34,35}\b`)
 
 	// JWT: 3 base64url segments separated by dots, header starting with eyJ.
 	jwtRegex = regexp.MustCompile(`\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b`)
@@ -129,6 +128,14 @@ func (d *SecretsDetector) Detect(text string) []Finding {
 		}
 
 		val := text[valStart:valEnd]
+		// Only trim trailing punctuation (such as sentence periods) if value is unquoted
+		isQuoted := valStart > 0 && (text[valStart-1] == '"' || text[valStart-1] == '\'')
+		if !isQuoted {
+			trimmedVal := strings.TrimRight(val, ".,;:!?)]}>")
+			valEnd = valStart + len(trimmedVal)
+			val = trimmedVal
+		}
+
 		if isPlaceholder(val) {
 			continue
 		}
