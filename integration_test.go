@@ -15,34 +15,6 @@ func TestIntegrationEmailEndToEnd(t *testing.T) {
 		t.Fatalf("failed to initialize engine: %v", err)
 	}
 
-	func TestIntegrationContextChangesDecision(t *testing.T) {
-		eng, err := privyai.New(privyai.DefaultConfig())
-		if err != nil {
-			t.Fatalf("failed to initialize engine: %v", err)
-		}
-		input := "Send alice@example.com"
-		external, err := eng.ProcessWithOptions(input, privyai.ProcessOptions{
-			ContentType:  privyai.ContentTypePlainText,
-			ContextLabel: "external_transmission",
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		local, err := eng.ProcessWithOptions(input, privyai.ProcessOptions{
-			ContentType:  privyai.ContentTypePlainText,
-			ContextLabel: "local_only",
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if external.Decision != privyai.ActionRedact || external.Sanitized == input {
-			t.Fatalf("external result = %#v", external)
-		}
-		if local.Decision != privyai.ActionAllow || local.Sanitized != input {
-			t.Fatalf("local result = %#v", local)
-		}
-	}
-
 	// 1. Basic email redaction from spec
 	input := "Send the report to alice@example.com."
 	expected := "Send the report to [EMAIL_REDACTED]."
@@ -558,5 +530,33 @@ func TestIntegrationCustomRulesEndToEnd(t *testing.T) {
 	}
 	if res.Findings[0].Category != "employee_id" || res.Findings[0].Tier != privyai.TierT2Confidential {
 		t.Errorf("expected employee_id T2, got: %+v", res.Findings[0])
+	}
+}
+
+func TestIntegrationContextChangesDecision(t *testing.T) {
+	eng, err := privyai.New(privyai.DefaultConfig())
+	if err != nil {
+		t.Fatalf("failed to initialize engine: %v", err)
+	}
+	input := "Send alice@example.com"
+	external, err := eng.ProcessWithOptions(input, privyai.ProcessOptions{
+		ContentType:  privyai.ContentTypePlainText,
+		ContextLabel: "external_transmission",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	local, err := eng.ProcessWithOptions(input, privyai.ProcessOptions{
+		ContentType:  privyai.ContentTypePlainText,
+		ContextLabel: "local_only",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if external.Decision != privyai.ActionRedact || external.Sanitized == input {
+		t.Fatalf("external result = %#v", external)
+	}
+	if local.Decision != privyai.ActionAllow || local.Sanitized != input {
+		t.Fatalf("local result = %#v", local)
 	}
 }
