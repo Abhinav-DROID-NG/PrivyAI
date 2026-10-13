@@ -18,6 +18,10 @@ func FuzzProcess(f *testing.F) {
 	f.Add("email.with.dots@sub.domain.com. Trailing period.")
 	f.Add("Multi-line\nalice@test.com\r\nbob@test.com\n")
 	f.Add(strings.Repeat("a", 100) + "@domain.com")
+	f.Add("The service uses API_KEY=sk_example_secret.")
+	f.Add("AWS key AKIAIOSFODNN7EXAMPLE active")
+	f.Add("-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA0\n-----END RSA PRIVATE KEY-----")
+	f.Add("Contact +1-800-555-0199 and 192.168.1.1")
 
 	eng, err := privyai.New(privyai.DefaultConfig())
 	if err != nil {
