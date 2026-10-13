@@ -58,6 +58,8 @@ type CustomRule = detector.CustomRule
 type Config struct {
 	EnabledDetectors        []string
 	PolicyJSON              []byte
+	// PolicyPath is reserved for callers that load policy bytes themselves.
+	// The core never reads files; use PolicyJSON to configure an engine.
 	PolicyPath              string
 	TierOverrides           map[string]Tier
 	DefaultTier             Tier
