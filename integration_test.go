@@ -56,6 +56,102 @@ func TestIntegrationEmailEndToEnd(t *testing.T) {
 	}
 }
 
+func TestIntegrationPhoneEndToEnd(t *testing.T) {
+	eng, err := privyai.New(privyai.DefaultConfig())
+	if err != nil {
+		t.Fatalf("failed to initialize engine: %v", err)
+	}
+
+	input := "Contact customer support at +1-800-555-0199 or (555) 123-4567 for help."
+	expected := "Contact customer support at [PHONE_REDACTED] or [PHONE_REDACTED] for help."
+
+	res, err := eng.Process(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if res.Sanitized != expected {
+		t.Errorf("expected sanitized output:\n%q\ngot:\n%q", expected, res.Sanitized)
+	}
+
+	if len(res.Findings) != 2 {
+		t.Fatalf("expected 2 findings, got %d", len(res.Findings))
+	}
+
+	for _, f := range res.Findings {
+		if f.Category != "phone" {
+			t.Errorf("expected category 'phone', got %q", f.Category)
+		}
+		if f.Tier != privyai.TierT1Personal {
+			t.Errorf("expected TierT1Personal, got %v", f.Tier)
+		}
+	}
+}
+
+func TestIntegrationIPEndToEnd(t *testing.T) {
+	eng, err := privyai.New(privyai.DefaultConfig())
+	if err != nil {
+		t.Fatalf("failed to initialize engine: %v", err)
+	}
+
+	input := "Connecting from public 8.8.8.8 to internal 192.168.1.1 and loopback ::1."
+	expected := "Connecting from public [IP_REDACTED] to internal [INTERNAL_IP_REDACTED] and loopback [INTERNAL_IP_REDACTED]."
+
+	res, err := eng.Process(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if res.Sanitized != expected {
+		t.Errorf("expected sanitized output:\n%q\ngot:\n%q", expected, res.Sanitized)
+	}
+
+	if len(res.Findings) != 3 {
+		t.Fatalf("expected 3 findings, got %d", len(res.Findings))
+	}
+
+	if res.Findings[0].Category != "ip" || res.Findings[0].Tier != privyai.TierT1Personal {
+		t.Errorf("expected public IP at index 0, got: %+v", res.Findings[0])
+	}
+	if res.Findings[1].Category != "internal_ip" || res.Findings[1].Tier != privyai.TierT2Confidential {
+		t.Errorf("expected internal IP at index 1, got: %+v", res.Findings[1])
+	}
+	if res.Findings[2].Category != "internal_ip" || res.Findings[2].Tier != privyai.TierT2Confidential {
+		t.Errorf("expected internal IP at index 2, got: %+v", res.Findings[2])
+	}
+}
+
+func TestIntegrationMixedEmailPhoneIP(t *testing.T) {
+	eng, err := privyai.New(privyai.DefaultConfig())
+	if err != nil {
+		t.Fatalf("failed to initialize engine: %v", err)
+	}
+
+	input := "Email alice@example.com, call +1-800-555-0199, server 10.0.0.1."
+	expected := "Email [EMAIL_REDACTED], call [PHONE_REDACTED], server [INTERNAL_IP_REDACTED]."
+
+	res, err := eng.Process(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if res.Sanitized != expected {
+		t.Errorf("expected sanitized output:\n%q\ngot:\n%q", expected, res.Sanitized)
+	}
+
+	// Idempotence on mixed text
+	res2, err := eng.Process(res.Sanitized)
+	if err != nil {
+		t.Fatalf("idempotence run failed: %v", err)
+	}
+	if len(res2.Findings) != 0 {
+		t.Errorf("expected 0 findings on re-run, got %d: %+v", len(res2.Findings), res2.Findings)
+	}
+	if res2.Sanitized != expected {
+		t.Errorf("idempotence sanitized output mismatch: %q", res2.Sanitized)
+	}
+}
+
 func TestIntegrationIdempotence(t *testing.T) {
 	eng, err := privyai.New(privyai.DefaultConfig())
 	if err != nil {

@@ -2,6 +2,7 @@ package privyai
 
 import (
 	"fmt"
+	"sort"
 	"unicode/utf8"
 
 	"github.com/YOURUSER/privyai/detector"
@@ -27,6 +28,16 @@ func New(cfg Config) (*Engine, error) {
 	// Register enabled built-in detectors
 	if isDetectorEnabled("email", cfg.EnabledDetectors) {
 		if err := reg.Register(detector.NewEmailDetector()); err != nil {
+			return nil, err
+		}
+	}
+	if isDetectorEnabled("phone", cfg.EnabledDetectors) {
+		if err := reg.Register(detector.NewPhoneDetector()); err != nil {
+			return nil, err
+		}
+	}
+	if isDetectorEnabled("ip", cfg.EnabledDetectors) {
+		if err := reg.Register(detector.NewIPDetector()); err != nil {
 			return nil, err
 		}
 	}
@@ -88,7 +99,7 @@ func (e *Engine) ProcessWithOptions(input string, opts ProcessOptions) (Result, 
 	decision := ActionAllow
 
 	for i, f := range rawFindings {
-		// In Phase 2: default sensitive findings to ActionRedact
+		// Default sensitive findings to ActionRedact
 		if f.Tier >= TierT1Personal {
 			f.Action = ActionRedact
 		} else {
@@ -97,6 +108,14 @@ func (e *Engine) ProcessWithOptions(input string, opts ProcessOptions) (Result, 
 		decision = MaxAction(decision, f.Action)
 		findings[i] = f
 	}
+
+	// Sort findings deterministically by Start asc, then End asc
+	sort.Slice(findings, func(i, j int) bool {
+		if findings[i].Start != findings[j].Start {
+			return findings[i].Start < findings[j].Start
+		}
+		return findings[i].End < findings[j].End
+	})
 
 	// 5. Redaction enforcement
 	sanitized, err := e.redactor.Redact(input, findings)

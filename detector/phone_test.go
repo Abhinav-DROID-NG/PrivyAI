@@ -109,3 +109,21 @@ func TestPhoneDetectorEdgeCases(t *testing.T) {
 		t.Fatalf("expected 2 phones, got %d", len(findingsMultiple))
 	}
 }
+
+func FuzzPhoneDetector(f *testing.F) {
+	f.Add("Call +14155552671 now")
+	f.Add("Office (555) 123-4567")
+	f.Add("2024-01-15 is a date")
+	f.Add("Version 1.2.3.4")
+	f.Add("[PHONE_REDACTED]")
+
+	d := NewPhoneDetector()
+	f.Fuzz(func(t *testing.T, text string) {
+		findings := d.Detect(text)
+		for _, finding := range findings {
+			if finding.Start < 0 || finding.Start >= finding.End || finding.End > len(text) {
+				t.Fatalf("invalid phone span [%d, %d) for text length %d", finding.Start, finding.End, len(text))
+			}
+		}
+	})
+}

@@ -31,7 +31,7 @@ func (d *IPDetector) Priority() int {
 var ipv4CandidateRegex = regexp.MustCompile(`\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b`)
 
 // Regex matching candidate IPv6 addresses.
-var ipv6CandidateRegex = regexp.MustCompile(`(?i)\b(?:[a-f0-9]{1,4}:){2,7}(?:[a-f0-9]{1,4}|:)\b|\b::(?:[a-f0-9]{1,4}:?){0,7}\b|\b[a-f0-9]{1,4}::(?:[a-f0-9]{1,4}:?){0,6}\b`)
+var ipv6CandidateRegex = regexp.MustCompile(`(?i)(?:[0-9a-f]{1,4}:)+:(?:[0-9a-f]{1,4}(?::[0-9a-f]{1,4})*)?|::(?:[0-9a-f]{1,4}(?::[0-9a-f]{1,4})*)?|(?:[0-9a-f]{1,4}:){7}[0-9a-f]{1,4}`)
 
 // Detect scans text and returns findings for IP addresses.
 func (d *IPDetector) Detect(text string) []Finding {
@@ -47,17 +47,29 @@ func (d *IPDetector) Detect(text string) []Finding {
 		start, end := match[0], match[1]
 		candidate := text[start:end]
 
-		// Ensure not preceded or followed by version prefix like 'v' or extra dot
+		// Ensure not preceded or followed by version prefix like 'v' or extra octets
 		if start > 0 {
 			prevRune, _ := utf8.DecodeLastRuneInString(text[:start])
-			if unicode.IsLetter(prevRune) || prevRune == '.' || prevRune == '_' {
+			if unicode.IsLetter(prevRune) || prevRune == '_' {
 				continue
+			}
+			if prevRune == '.' && start > 1 {
+				prevPrev, _ := utf8.DecodeLastRuneInString(text[:start-1])
+				if unicode.IsDigit(prevPrev) {
+					continue // Extra octet before
+				}
 			}
 		}
 		if end < len(text) {
 			nextRune, _ := utf8.DecodeRuneInString(text[end:])
-			if unicode.IsLetter(nextRune) || nextRune == '.' || nextRune == '_' {
+			if unicode.IsLetter(nextRune) || nextRune == '_' {
 				continue
+			}
+			if nextRune == '.' && end+1 < len(text) {
+				nextNext, _ := utf8.DecodeRuneInString(text[end+1:])
+				if unicode.IsDigit(nextNext) {
+					continue // Extra octet after (e.g. 1.2.3.4.5)
+				}
 			}
 		}
 
@@ -89,6 +101,20 @@ func (d *IPDetector) Detect(text string) []Finding {
 	for _, match := range v6Matches {
 		start, end := match[0], match[1]
 		candidate := text[start:end]
+
+		// Ensure not preceded or followed by hex digits or colons
+		if start > 0 {
+			prevRune, _ := utf8.DecodeLastRuneInString(text[:start])
+			if unicode.IsLetter(prevRune) || unicode.IsDigit(prevRune) || prevRune == '_' || prevRune == ':' {
+				continue
+			}
+		}
+		if end < len(text) {
+			nextRune, _ := utf8.DecodeRuneInString(text[end:])
+			if unicode.IsLetter(nextRune) || unicode.IsDigit(nextRune) || nextRune == '_' || nextRune == ':' {
+				continue
+			}
+		}
 
 		// Avoid single-word or short non-IPv6 strings
 		if !strings.Contains(candidate, ":") || strings.Count(candidate, ":") < 2 {
