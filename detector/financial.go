@@ -27,13 +27,11 @@ func (d *FinancialDetector) Priority() int {
 
 // Regular expressions for candidates.
 var (
-	// Payment card candidates: 13 to 19 digits with optional spaces or hyphens.
-	// Boundary check requires non-digit before and after.
-	cardCandidateRegex = regexp.MustCompile(`(?:\b|\D)(\d(?:[ -]?\d){12,18})(?:\b|\D)`)
+	// Payment card candidates: grouped formats (4-4-4-4, 4-6-5, 4-6-4) or continuous 13-19 digits.
+	cardCandidateRegex = regexp.MustCompile(`\b(\d{3,6}(?:[ -]\d{3,6}){2,4}|\d{13,19})\b`)
 
-	// IBAN candidate: 2 uppercase country letters + 2 check digits + up to 30 alphanumeric characters.
-	// Can have optional spaces grouping 4 characters.
-	ibanCandidateRegex = regexp.MustCompile(`\b([A-Z]{2}\d{2}(?:[ ]?[A-Za-z0-9]){11,30})\b`)
+	// IBAN candidate: 2 country letters + 2 check digits + continuous or 4-char space-separated blocks.
+	ibanCandidateRegex = regexp.MustCompile(`\b([A-Z]{2}\d{2}(?:[A-Za-z0-9]{11,30}|(?:\s[A-Za-z0-9]{4}){2,7}(?:\s[A-Za-z0-9]{1,4})?))\b`)
 )
 
 // Detect scans the input text for payment cards and IBANs.
