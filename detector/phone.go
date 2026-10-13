@@ -200,6 +200,14 @@ func isValidPhone(phone, fullText string, start, end int) bool {
 		}
 	}
 
+	// Reject SSN format (3 digits - 2 digits - 4 digits)
+	if strings.Count(phone, "-") == 2 && !hasPlus {
+		parts := strings.Split(phone, "-")
+		if len(parts) == 3 && len(parts[0]) == 3 && len(parts[1]) == 2 && len(parts[2]) == 4 {
+			return false
+		}
+	}
+
 	// Reject pure unbroken digits unless E.164 with '+'
 	if !hasPlus && separatorCount == 0 {
 		// Pure unbroken 7-15 digits without any separator or '+' are IDs or account numbers, not formatted phone
