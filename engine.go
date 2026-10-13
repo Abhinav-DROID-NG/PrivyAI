@@ -41,6 +41,11 @@ func New(cfg Config) (*Engine, error) {
 			return nil, err
 		}
 	}
+	if isDetectorEnabled("secrets", cfg.EnabledDetectors) {
+		if err := reg.Register(detector.NewSecretsDetector(cfg.EntropyDetection, cfg.EntropyThreshold)); err != nil {
+			return nil, err
+		}
+	}
 
 	red := redactor.NewRedactor(cfg.Replacement, cfg.FailClosedBehavior)
 
