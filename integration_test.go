@@ -395,3 +395,147 @@ func TestIntegrationPEMBlockEndToEnd(t *testing.T) {
 		t.Errorf("expected TierT4Critical private_key, got: %+v", res.Findings[0])
 	}
 }
+
+func TestIntegrationFinancialEndToEnd(t *testing.T) {
+	eng, err := privyai.New(privyai.DefaultConfig())
+	if err != nil {
+		t.Fatalf("failed to initialize engine: %v", err)
+	}
+
+	input := "Customer paid with card 4111-0000-0000-0008 and transfer to DE89370400440532013000."
+	expected := "Customer paid with card [PAYMENT_CARD_REDACTED] and transfer to [IBAN_REDACTED]."
+
+	res, err := eng.Process(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if res.Sanitized != expected {
+		t.Errorf("expected sanitized:\n%q\ngot:\n%q", expected, res.Sanitized)
+	}
+
+	if len(res.Findings) != 2 {
+		t.Fatalf("expected 2 findings, got %d", len(res.Findings))
+	}
+	if res.Findings[0].Category != "payment_card" || res.Findings[0].Tier != privyai.TierT3Restricted {
+		t.Errorf("expected payment_card T3 at 0, got: %+v", res.Findings[0])
+	}
+	if res.Findings[1].Category != "iban" || res.Findings[1].Tier != privyai.TierT3Restricted {
+		t.Errorf("expected iban T3 at 1, got: %+v", res.Findings[1])
+	}
+}
+
+func TestIntegrationIdentifiersEndToEnd(t *testing.T) {
+	cfg := privyai.DefaultConfig()
+	cfg.IdentifierJurisdictions = []string{"US", "UK"}
+
+	eng, err := privyai.New(cfg)
+	if err != nil {
+		t.Fatalf("failed to initialize engine: %v", err)
+	}
+
+	input := "US tax ID: 123-45-6789 and UK insurance: AB123456A on file."
+	expected := "US tax ID: [SSN_REDACTED] and UK insurance: [UK_NINO_REDACTED] on file."
+
+	res, err := eng.Process(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if res.Sanitized != expected {
+		t.Errorf("expected sanitized:\n%q\ngot:\n%q", expected, res.Sanitized)
+	}
+
+	if len(res.Findings) != 2 {
+		t.Fatalf("expected 2 findings, got %d", len(res.Findings))
+	}
+}
+
+func TestIntegrationDatabasePasswordOnlyEndToEnd(t *testing.T) {
+	cfg := privyai.DefaultConfig()
+	cfg.DatabaseRedactMode = privyai.DatabaseRedactPasswordOnly
+
+	eng, err := privyai.New(cfg)
+	if err != nil {
+		t.Fatalf("failed to initialize engine: %v", err)
+	}
+
+	input := "Connect string: postgres://app_user:secret_postgres_pass@db.internal:5432/mydb active."
+	expected := "Connect string: postgres://app_user:[DATABASE_CREDENTIALS_REDACTED]@db.internal:5432/mydb active."
+
+	res, err := eng.Process(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if res.Sanitized != expected {
+		t.Errorf("expected sanitized:\n%q\ngot:\n%q", expected, res.Sanitized)
+	}
+
+	if len(res.Findings) != 1 {
+		t.Fatalf("expected 1 finding, got %d", len(res.Findings))
+	}
+	if res.Findings[0].Category != "database_credentials" || res.Findings[0].Tier != privyai.TierT4Critical {
+		t.Errorf("expected database_credentials T4, got: %+v", res.Findings[0])
+	}
+}
+
+func TestIntegrationDatabaseFullURLEndToEnd(t *testing.T) {
+	cfg := privyai.DefaultConfig()
+	cfg.DatabaseRedactMode = privyai.DatabaseRedactFullURL
+
+	eng, err := privyai.New(cfg)
+	if err != nil {
+		t.Fatalf("failed to initialize engine: %v", err)
+	}
+
+	input := "Connect string: postgres://app_user:secret_postgres_pass@db.internal:5432/mydb active."
+	expected := "Connect string: [DATABASE_CREDENTIALS_REDACTED] active."
+
+	res, err := eng.Process(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if res.Sanitized != expected {
+		t.Errorf("expected sanitized:\n%q\ngot:\n%q", expected, res.Sanitized)
+	}
+}
+
+func TestIntegrationCustomRulesEndToEnd(t *testing.T) {
+	cfg := privyai.DefaultConfig()
+	cfg.CustomRules = []privyai.CustomRule{
+		{
+			Name:       "internal_emp",
+			Pattern:    `\bEMP-\d{5}\b`,
+			Category:   "employee_id",
+			Tier:       privyai.TierT2Confidential,
+			Confidence: privyai.ConfidenceHigh,
+		},
+	}
+
+	eng, err := privyai.New(cfg)
+	if err != nil {
+		t.Fatalf("failed to initialize engine: %v", err)
+	}
+
+	input := "Officer EMP-99881 checked in."
+	expected := "Officer [EMPLOYEE_ID_REDACTED] checked in."
+
+	res, err := eng.Process(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if res.Sanitized != expected {
+		t.Errorf("expected sanitized:\n%q\ngot:\n%q", expected, res.Sanitized)
+	}
+
+	if len(res.Findings) != 1 {
+		t.Fatalf("expected 1 finding, got %d", len(res.Findings))
+	}
+	if res.Findings[0].Category != "employee_id" || res.Findings[0].Tier != privyai.TierT2Confidential {
+		t.Errorf("expected employee_id T2, got: %+v", res.Findings[0])
+	}
+}
+
