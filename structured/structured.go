@@ -4,7 +4,6 @@ package structured
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 	"unicode"
 
@@ -198,7 +197,8 @@ func (s *jsonScanner) string() (int, int, string, error) {
 		case '"':
 			end := s.pos + 1
 			raw := s.text[start:end]
-			decoded, err := strconv.Unquote(raw)
+			var decoded string
+			err := json.Unmarshal([]byte(raw), &decoded)
 			s.pos = end
 			return start + 1, end - 1, decoded, err
 		default:

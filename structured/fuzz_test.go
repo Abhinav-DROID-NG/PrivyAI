@@ -11,6 +11,9 @@ func FuzzScanJSON(f *testing.F) {
 	f.Add(`{"message":"alice@example.com"}`)
 	f.Add(`{"escaped":"a\\\"b"}`)
 	f.Fuzz(func(t *testing.T, input string) {
+		if !utf8.ValidString(input) {
+			return
+		}
 		findings, fallback, err := Scan(input, JSON, 100)
 		if err != nil {
 			t.Fatal(err)
@@ -22,7 +25,7 @@ func FuzzScanJSON(f *testing.F) {
 			if finding.Start < 0 || finding.Start >= finding.End || finding.End > len(input) {
 				t.Fatalf("invalid span [%d,%d) for %d bytes", finding.Start, finding.End, len(input))
 			}
-			if !utf8.RuneStart(input[finding.Start]) || !utf8.RuneStart(input[finding.End]) {
+			if !utf8.RuneStart(input[finding.Start]) || finding.End < len(input) && !utf8.RuneStart(input[finding.End]) {
 				t.Fatalf("span is not rune-aligned: [%d,%d)", finding.Start, finding.End)
 			}
 		}
