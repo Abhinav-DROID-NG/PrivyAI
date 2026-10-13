@@ -8,11 +8,13 @@ This checklist records verified repository state only.
 - [x] Documentation for architecture, detection rules, policy, limitations, API, evaluation, and benchmarks exists.
 - [x] Benchmark command exists: `go test -bench=. -benchmem ./benchmarks`.
 - [x] Evaluation command exists: `make eval`.
-- [ ] Full Phase 9 corpus thresholds: not met; current harness has eight smoke samples only.
+- [ ] Full Phase 9 corpus thresholds: not met; the checked-in corpus now validates exact category and byte spans but remains a small smoke corpus.
 - [ ] Coverage target of 85%: measured at 82.5% overall.
 - [x] Network-import audit: non-test core imports contain no forbidden `net/http`, `os/exec`, `syscall`, or `unsafe` imports.
 - [x] Benchmark run completed on Linux amd64, 12th Gen Intel(R) Core(TM) i5-12450H.
-- [ ] Staticcheck: not verified.
+- [x] Staticcheck passes with no findings.
+- [x] MIT license is present.
+- [x] GitHub Actions runs formatting, vet, tests, and race tests.
 - [ ] Production readiness: not claimed.
 
 ## Not ready for
