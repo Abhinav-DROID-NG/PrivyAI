@@ -95,6 +95,35 @@ func TestPrecedenceScenarios(t *testing.T) {
 		{"priority tie uses specificity", []Rule{{Category: "*", Action: detector.ActionAllow, Priority: priority(1)}, {Category: "email", Action: detector.ActionRedact, Priority: priority(1)}}, detector.Finding{Category: "email"}, "", detector.ActionRedact},
 		{"priority tie protective", []Rule{{Category: "email", Action: detector.ActionRedact, Priority: priority(1)}, {Category: "email", Action: detector.ActionBlock, Priority: priority(1)}}, detector.Finding{Category: "email"}, "", detector.ActionBlock},
 	}
+
+	func TestEvaluateFailClosed(t *testing.T) {
+		tests := []struct {
+			name   string
+			tier   detector.Tier
+			action detector.Action
+		}{
+			{"t2 error", detector.TierT2Confidential, detector.ActionRedact},
+			{"t3 error", detector.TierT3Restricted, detector.ActionBlock},
+			{"t4 panic", detector.TierT4Critical, detector.ActionBlock},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				evaluator := EvaluatorFunc(func(detector.Finding, string) (Evaluation, error) {
+					if test.name == "t4 panic" {
+						panic("must not escape")
+					}
+					return Evaluation{}, errors.New("evaluation failed")
+				})
+				result, err := EvaluateFailClosed(evaluator, detector.Finding{Tier: test.tier}, "")
+				if err == nil {
+					t.Fatal("expected evaluator error")
+				}
+				if result.Action != test.action {
+					t.Fatalf("got %s, want %s", result.Action, test.action)
+				}
+			})
+		}
+	}
 	if len(tests) < 25 {
 		t.Fatalf("test table has %d scenarios, want at least 25", len(tests))
 	}
