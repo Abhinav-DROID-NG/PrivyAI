@@ -27,7 +27,7 @@ func (d *PhoneDetector) Priority() int {
 
 // Regex matching candidate phone patterns:
 // Matches international (+...) or national forms with separators (-, ., space, parentheses).
-var phoneCandidateRegex = regexp.MustCompile(`(?:\+\d{1,4}[-.\s]*)?(?:\(?\d{2,4}\)?[-.\s]*)?\d{3,4}[-.\s]*\d{3,4}(?:[-.\s]*\d{1,4})?`)
+var phoneCandidateRegex = regexp.MustCompile(`(?:\+\d{1,4}[-.\s]*)?(?:\(\d{1,5}\)[-.\s]*)?(?:\d{1,5}[-.\s]*){2,6}\d{1,5}`)
 
 // Detect scans text and returns candidate phone findings.
 func (d *PhoneDetector) Detect(text string) []Finding {
@@ -59,6 +59,9 @@ func (d *PhoneDetector) Detect(text string) []Finding {
 		if actualStart > 0 {
 			prevRune, _ := utf8.DecodeLastRuneInString(text[:actualStart])
 			if unicode.IsLetter(prevRune) || prevRune == '_' || prevRune == '/' || prevRune == '@' {
+				continue
+			}
+			if prevRune == '(' && !strings.Contains(trimmed, ")") {
 				continue
 			}
 		}
