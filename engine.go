@@ -2,10 +2,10 @@ package privyai
 
 import (
 	"fmt"
-	"sort"
 	"unicode/utf8"
 
 	"github.com/YOURUSER/privyai/detector"
+	"github.com/YOURUSER/privyai/internal/findings"
 	"github.com/YOURUSER/privyai/redactor"
 )
 
@@ -122,32 +122,26 @@ func (e *Engine) ProcessWithOptions(input string, opts ProcessOptions) (Result, 
 		return Result{}, err
 	}
 
-	// 4. Default policy assignment for Phase 2:
-	// Sensitive findings (e.g. Email / T1+) default to ActionRedact unless policy overrides
-	findings := make([]Finding, len(rawFindings))
+	// 4. Aggregation: deduplicate and resolve overlaps deterministically
+	aggregated := findings.Aggregate(rawFindings, e.registry.Priorities())
+
+	// 5. Default policy assignment:
+	// Sensitive findings (e.g. T1+) default to ActionRedact unless policy overrides
+	processedFindings := make([]Finding, len(aggregated))
 	decision := ActionAllow
 
-	for i, f := range rawFindings {
-		// Default sensitive findings to ActionRedact
+	for i, f := range aggregated {
 		if f.Tier >= TierT1Personal {
 			f.Action = ActionRedact
 		} else {
 			f.Action = ActionAllow
 		}
 		decision = MaxAction(decision, f.Action)
-		findings[i] = f
+		processedFindings[i] = f
 	}
 
-	// Sort findings deterministically by Start asc, then End asc
-	sort.Slice(findings, func(i, j int) bool {
-		if findings[i].Start != findings[j].Start {
-			return findings[i].Start < findings[j].Start
-		}
-		return findings[i].End < findings[j].End
-	})
-
-	// 5. Redaction enforcement
-	sanitized, err := e.redactor.Redact(input, findings)
+	// 6. Redaction enforcement
+	sanitized, err := e.redactor.Redact(input, processedFindings)
 	if err != nil {
 		if e.config.FailClosedOnError {
 			return e.failClosedResult(err)
@@ -155,11 +149,11 @@ func (e *Engine) ProcessWithOptions(input string, opts ProcessOptions) (Result, 
 		return Result{}, err
 	}
 
-	stats := e.computeStats(findings)
+	stats := e.computeStats(processedFindings)
 
 	return Result{
 		Sanitized:  sanitized,
-		Findings:   findings,
+		Findings:   processedFindings,
 		Decision:   decision,
 		Blocked:    decision == ActionBlock,
 		Restricted: decision == ActionRestrict,
