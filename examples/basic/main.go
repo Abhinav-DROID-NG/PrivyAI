@@ -8,6 +8,7 @@ import (
 )
 
 func main() {
+	fmt.Println("Send alice@example.com")
 	engine, err := privyai.New(privyai.DefaultConfig())
 	if err != nil {
 		log.Fatal(err)
