@@ -79,6 +79,14 @@ A runnable version of the smallest example lives in [`examples/basic`](examples/
 go run ./examples/basic
 ```
 
+For a runnable tour of all built-in detector categories, structured inputs,
+`ALLOW`/`REDACT`/`RESTRICT`/`BLOCK` decisions, replacement strategies, and
+configuration errors, run the showcase:
+
+```sh
+go run ./examples/showcase
+```
+
 > All sample values in this repository are synthetic. `4111 1111 1111 1111` is a well-known test card number, `123-45-6789` is a made-up SSN, and `AKIAIOSFODNN7EXAMPLE` is AWS's documentation example key.
 
 **Next:** [Getting started guide](docs/getting-started.md).
